@@ -36,7 +36,7 @@ wifi:
   # Enable fallback hotspot (captive portal) in case wifi connection fails
   ap:
     ssid: "Zebus Fallback Hotspot"
-    password: "1sNT2LTOp1M8"
+    password: !secret wifi_ap_fallback_password
 
 captive_portal:
 
