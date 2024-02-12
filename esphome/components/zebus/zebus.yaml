@@ -1,0 +1,125 @@
+esphome:
+  name: zebus
+  friendly_name: Zebus Verwarming
+  includes:
+    - zebus.h
+    - include/Ebus.cpp
+    - include/ebus-defines.h
+    - include/ebus-enums.h
+    - include/Ebus.h
+    - include/SendCommand.cpp
+    - include/SendCommand.h
+    - include/TelegramBase.cpp
+    - include/TelegramBase.h
+    - include/Telegram.cpp
+    - include/Telegram.h
+
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: ""
+
+ota:
+  password: ""
+
+wifi:
+  ssid: !secret wifi_iot_ssid
+  password: !secret wifi_iot_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Zebus Fallback Hotspot"
+    password: "1sNT2LTOp1M8"
+
+captive_portal:
+
+sensor:
+  - platform: "custom"
+    lambda: |-
+
+      esphome::zebus::zebus_config_t zebus_config = {
+        .interval_ms = 30000,
+        .uart = {
+          .num = 1,
+          .pin_rx = 32,
+          .pin_tx = 33,
+        },
+        .queues = {
+          .history_size = 50,
+          .command_size = 20,
+        },
+        .ebus = {
+          .ebus_config = {
+            .master_address = 0x00,
+            .max_tries = 2,
+            .max_lock_counter = 4,
+          },
+          .identification = {
+            .device_name = "Zebus",
+            .vendor_id = 0xDD,
+            .software_version = 0x0002,
+            .hardware_version = 0x0001,
+          }
+        }
+      };
+
+      auto zebus = new esphome::zebus::Zebus(zebus_config);
+
+      /*
+      zebus->add_message_handler( [&](Ebus::Telegram &telegram) {
+        uint16_t command = BYTES_TO_WORD(telegram.getPB(), telegram.getSB());
+        if (command != CMD_DEVICE_CONFIG) {
+          return;
+        }
+        if (telegram.getRequestByte(0) != DEVICE_CONFIG_SUBCOMMAND_READ) {
+          return;
+        }
+        uint16_t configReadCommand = BYTES_TO_WORD(telegram.getRequestByte(1), telegram.getRequestByte(2));
+        if (configReadCommand != DEVICE_CONFIG_WATER_PRESSURE) {
+          return;
+        }
+
+        float pressure = 1.234; //BYTES_TO_WORD(telegram.getResponseByte(1), telegram.getResponseByte(0)) / 1000.0;
+
+        //water_pressure->publish_state(pressure);
+        zebus->water_pressure->publish_state(pressure);
+
+      } );
+      */
+
+      App.register_component(zebus);
+
+      return {
+        zebus->water_pressure
+      };
+
+    sensors:
+      - name: "Water Pressure"
+        device_class: "pressure"
+        unit_of_measurement: bar
+        state_class: "measurement"
+        accuracy_decimals: 3
+        internal: false
+
+  # Wifi signal sensors
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    device_class: ""
+    name: "WiFi signal"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
