@@ -17,9 +17,9 @@ namespace zebus {
 #define CMD_IDENTIFICATION (0x0704)
 #define CMD_DEVICE_CONFIG (0xB509)
 
-#define DEVICE_CONFIG_SUBCOMMAND_READ 0x0D
+#define DEVICE_CONFIG_SUBCOMMAND_READ (0x0D)
 
-#define DEVICE_CONFIG_WATER_PRESSURE 0x0200
+#define DEVICE_CONFIG_WATER_PRESSURE (0x0200)
 
 
 typedef struct {
@@ -59,6 +59,11 @@ public:
   }
 
   Sensor *water_pressure = new Sensor();
+  Sensor *flow_temp = new Sensor();
+  Sensor *return_temp = new Sensor();
+  Sensor *storage_temp = new Sensor();
+  Sensor *hot_water_heating = new Sensor();
+
 
   void setup() override {
 
@@ -89,6 +94,28 @@ public:
 
       water_pressure->publish_state(pressure);
 
+    } );
+
+    add_message_handler( [&](Ebus::Telegram &telegram) {
+      uint16_t command = BYTES_TO_WORD(telegram.getPB(), telegram.getSB());
+      if (command != 0xB511) {
+        return;
+      }
+      if (telegram.getRequestByte(0) != 0x01) {
+        return;
+      }
+
+      float flow = telegram.getResponseByte(0) / 2.0;
+      flow_temp->publish_state(flow);
+
+      float ret = telegram.getResponseByte(1) / 2.0;
+      return_temp->publish_state(ret);
+
+      float storage = telegram.getResponseByte(5) / 2.0;
+      storage_temp->publish_state(storage);
+
+      bool is_hwc_heating = telegram.getResponseByte(6) && 0x01;
+      hot_water_heating->publish_state(is_hwc_heating);
     } );
 
 
