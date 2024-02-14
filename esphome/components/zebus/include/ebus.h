@@ -5,7 +5,7 @@
 #include <functional>
 #include <list>
 
-#include "Telegram.h"
+#include "telegram.h"
 #include "ebus-enums.h"
 
 typedef struct {

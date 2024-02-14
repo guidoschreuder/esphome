@@ -2,7 +2,7 @@
 #define ZEBUS_EBUS_H
 
 #include "esphome.h"
-#include "Ebus.h"
+#include "ebus.h"
 
 #include <driver/uart.h>
 #include <soc/uart_reg.h>

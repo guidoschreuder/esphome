@@ -4,10 +4,10 @@ esphome:
   includes:
     - zebus.h
     - include/ebus-enums.h
-    - include/Telegram.h
-    - include/Ebus.h
-    - include/Ebus.cpp
-    - include/Telegram.cpp
+    - include/telegram.h
+    - include/telegram.cpp
+    - include/ebus.h
+    - include/ebus.cpp
 
 esp32:
   board: esp32doit-devkit-v1
