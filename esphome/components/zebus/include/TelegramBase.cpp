@@ -7,14 +7,6 @@ namespace Ebus {
 TelegramBase::TelegramBase() {
 }
 
-uint8_t TelegramBase::getNN() {
-  uint8_t nn = requestBuffer[EBUS_OFFSET_NN];
-  if (nn >= EBUS_MAX_DATA_LENGTH) {
-    return 0;
-  }
-  return nn;
-}
-
 TelegramState TelegramBase::getState() {
   return state;
 }
@@ -39,22 +31,22 @@ void TelegramBase::pushBuffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t
     if (*pos < max_pos) {
       *crc = Ebus::Elf::crc8Calc(cr, *crc);
     }
-    buffer[(*pos)] = (cr == 0x0 ? EBUS_ESC : EBUS_SYN);
+    buffer[(*pos)] = (cr == 0x0 ? ESC : SYN);
     waitForEscaped = false;
   } else {
     if (*pos < max_pos) {
       *crc = Ebus::Elf::crc8Calc(cr, *crc);
     }
     buffer[(*pos)++] = cr;
-    waitForEscaped = (cr == EBUS_ESC);
+    waitForEscaped = (cr == ESC);
   }
 }
 
 TelegramType TelegramBase::getType() {
-  if (getZZ() == EBUS_ESC) {
+  if (getZZ() == ESC) {
     return TelegramType::Unknown;
   }
-  if (getZZ() == EBUS_BROADCAST_ADDRESS) {
+  if (getZZ() == BROADCAST_ADDRESS) {
     return TelegramType::Broadcast;
   }
   if (Ebus::Elf::isMaster(getZZ())) {
@@ -64,18 +56,18 @@ TelegramType TelegramBase::getType() {
 }
 
 int16_t TelegramBase::getRequestByte(uint8_t pos) {
-  if (pos > getNN() || pos >= EBUS_MAX_DATA_LENGTH) {
+  if (pos > getNN() || pos >= MAX_DATA_LENGTH) {
     return -1;
   }
-  return requestBuffer[EBUS_OFFSET_DATA + pos];
+  return requestBuffer[OFFSET_DATA + pos];
 }
 
 uint8_t TelegramBase::getRequestCRC() {
-  return requestBuffer[EBUS_OFFSET_DATA + getNN()];
+  return requestBuffer[OFFSET_DATA + getNN()];
 }
 
 void TelegramBase::pushReqData(uint8_t cr) {
-  pushBuffer(cr, requestBuffer, &requestBufferPos, &requestRollingCRC, EBUS_OFFSET_DATA + getNN());
+  pushBuffer(cr, requestBuffer, &requestBufferPos, &requestRollingCRC, OFFSET_DATA + getNN());
 }
 
 bool TelegramBase::isAckExpected() {
