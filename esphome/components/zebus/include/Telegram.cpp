@@ -27,13 +27,13 @@ void TelegramBase::setState(TelegramState newState) {
 void TelegramBase::pushBuffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t *crc, int max_pos) {
   if (waitForEscaped) {
     if (*pos < max_pos) {
-      *crc = Ebus::Elf::crc8Calc(cr, *crc);
+      *crc = Elf::crc8Calc(cr, *crc);
     }
     buffer[(*pos)] = (cr == 0x0 ? ESC : SYN);
     waitForEscaped = false;
   } else {
     if (*pos < max_pos) {
-      *crc = Ebus::Elf::crc8Calc(cr, *crc);
+      *crc = Elf::crc8Calc(cr, *crc);
     }
     buffer[(*pos)++] = cr;
     waitForEscaped = (cr == ESC);
@@ -47,7 +47,7 @@ TelegramType TelegramBase::getType() {
   if (getZZ() == BROADCAST_ADDRESS) {
     return TelegramType::Broadcast;
   }
-  if (Ebus::Elf::isMaster(getZZ())) {
+  if (Elf::isMaster(getZZ())) {
     return TelegramType::MasterMaster;
   }
   return TelegramType::MasterSlave;

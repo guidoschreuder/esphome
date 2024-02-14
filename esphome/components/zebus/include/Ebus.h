@@ -17,6 +17,18 @@ typedef struct {
 
 namespace Ebus {
 
+class Elf {
+public:
+  static unsigned char crc8Calc(unsigned char data, unsigned char crc_init);
+  static unsigned char crc8Array(unsigned char data[], unsigned int length);
+  static bool isMaster(uint8_t address);
+  static int isMasterNibble(uint8_t nibble);
+  static uint8_t getPriorityClass(uint8_t address);
+  static uint8_t getSubAddress(uint8_t address);
+  static uint8_t toSlave(uint8_t address);
+};
+
+
 class Ebus {
 public:
   explicit Ebus(ebus_config_t &config);
@@ -29,17 +41,6 @@ public:
   //void addSendResponseHandler(send_response_handler);
   void addSendResponseHandler(std::function<uint8_t(Telegram &, uint8_t *)>);
 
-
-  class Elf {
-  public:
-    static unsigned char crc8Calc(unsigned char data, unsigned char crc_init);
-    static unsigned char crc8Array(unsigned char data[], unsigned int length);
-    static bool isMaster(uint8_t address);
-    static int isMasterNibble(uint8_t nibble);
-    static uint8_t getPriorityClass(uint8_t address);
-    static uint8_t getSubAddress(uint8_t address);
-    static uint8_t toSlave(uint8_t address);
-  };
 
 protected:
   uint8_t masterAddress;

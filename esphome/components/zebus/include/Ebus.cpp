@@ -273,7 +273,7 @@ void Ebus::handleResponse(Telegram &telegram) {
   uartSendChar(crc);
 }
 
-unsigned char Ebus::Elf::crc8Calc(unsigned char data, unsigned char crc_init) {
+unsigned char Elf::crc8Calc(unsigned char data, unsigned char crc_init) {
   unsigned char crc;
   unsigned char polynom;
 
@@ -294,7 +294,7 @@ unsigned char Ebus::Elf::crc8Calc(unsigned char data, unsigned char crc_init) {
   return (crc);
 }
 
-unsigned char Ebus::Elf::crc8Array(unsigned char data[], unsigned int length) {
+unsigned char Elf::crc8Array(unsigned char data[], unsigned int length) {
   unsigned char uc_crc;
   uc_crc = (unsigned char)0;
   for (int i = 0; i < length; i++) {
@@ -303,12 +303,12 @@ unsigned char Ebus::Elf::crc8Array(unsigned char data[], unsigned int length) {
   return (uc_crc);
 }
 
-bool Ebus::Elf::isMaster(uint8_t address) {
+bool Elf::isMaster(uint8_t address) {
   return isMasterNibble(getPriorityClass(address)) &&  //
          isMasterNibble(getSubAddress(address));
 }
 
-int Ebus::Elf::isMasterNibble(uint8_t nibble) {
+int Elf::isMasterNibble(uint8_t nibble) {
   switch (nibble) {
   case 0b0000:
   case 0b0001:
@@ -321,15 +321,15 @@ int Ebus::Elf::isMasterNibble(uint8_t nibble) {
   }
 }
 
-uint8_t Ebus::Elf::getPriorityClass(uint8_t address) {
+uint8_t Elf::getPriorityClass(uint8_t address) {
   return (address & 0x0F);
 }
 
-uint8_t Ebus::Elf::getSubAddress(uint8_t address) {
+uint8_t Elf::getSubAddress(uint8_t address) {
   return (address >> 4);
 }
 
-uint8_t Ebus::Elf::toSlave(uint8_t address) {
+uint8_t Elf::toSlave(uint8_t address) {
   if (isMaster(address)) {
     return (address + 5) % 0xFF;
   }

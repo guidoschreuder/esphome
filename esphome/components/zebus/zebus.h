@@ -176,7 +176,7 @@ public:
     uint8_t data[] = { DEVICE_CONFIG_SUBCOMMAND_READ, GET_BYTE(config_element, 1), GET_BYTE(config_element, 0)};
     return Ebus::SendCommand(  //
         zebus_config.ebus.ebus_config.master_address,
-        Ebus::Ebus::Elf::toSlave(target),
+        Ebus::Elf::toSlave(target),
         GET_BYTE(CMD_DEVICE_CONFIG, 1),
         GET_BYTE(CMD_DEVICE_CONFIG, 0),
         3,
