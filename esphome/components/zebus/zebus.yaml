@@ -3,15 +3,11 @@ esphome:
   friendly_name: Zebus Verwarming
   includes:
     - zebus.h
-    - include/Ebus.cpp
     - include/ebus-enums.h
-    - include/Ebus.h
-    - include/SendCommand.cpp
-    - include/SendCommand.h
-    - include/TelegramBase.cpp
-    - include/TelegramBase.h
-    - include/Telegram.cpp
     - include/Telegram.h
+    - include/Ebus.h
+    - include/Ebus.cpp
+    - include/Telegram.cpp
 
 esp32:
   board: esp32doit-devkit-v1

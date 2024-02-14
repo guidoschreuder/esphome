@@ -5,7 +5,6 @@
 #include <functional>
 #include <list>
 
-#include "SendCommand.h"
 #include "Telegram.h"
 #include "ebus-enums.h"
 
