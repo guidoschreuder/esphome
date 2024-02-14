@@ -3,8 +3,6 @@
 
 #include "ebus-enums.h"
 
-#define EBUS_SLAVE_ADDRESS(MASTER) ((uint8_t) (((MASTER) + 5) % 0xFF))
-
 namespace Ebus {
 
   const uint8_t SYN = 0xAA;

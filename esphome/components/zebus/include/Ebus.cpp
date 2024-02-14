@@ -238,7 +238,7 @@ void Ebus::addSendResponseHandler(std::function<uint8_t(Telegram &, uint8_t *)> 
 
 void Ebus::handleResponse(Telegram &telegram) {
   if (telegram.getState() != TelegramState::waitForRequestAck ||
-      telegram.getZZ() != EBUS_SLAVE_ADDRESS(masterAddress)) {
+      telegram.getZZ() != Elf::toSlave(masterAddress)) {
     return;
   }
   if (!telegram.isRequestValid()) {
@@ -327,6 +327,13 @@ uint8_t Ebus::Elf::getPriorityClass(uint8_t address) {
 
 uint8_t Ebus::Elf::getSubAddress(uint8_t address) {
   return (address >> 4);
+}
+
+uint8_t Ebus::Elf::toSlave(uint8_t address) {
+  if (isMaster(address)) {
+    return (address + 5) % 0xFF;
+  }
+  return address;
 }
 
 }  // namespace Ebus

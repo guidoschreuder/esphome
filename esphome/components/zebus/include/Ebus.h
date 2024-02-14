@@ -59,6 +59,7 @@ public:
     static int isMasterNibble(uint8_t nibble);
     static uint8_t getPriorityClass(uint8_t address);
     static uint8_t getSubAddress(uint8_t address);
+    static uint8_t toSlave(uint8_t address);
   };
 
 #ifdef UNIT_TEST
