@@ -5,11 +5,7 @@
 
 namespace Ebus {
 class Telegram : public TelegramBase {
-  uint8_t responseBuffer[RESPONSE_BUFFER_SIZE] = {0};
-  uint8_t responseBufferPos = 0;
-  uint8_t responseRollingCRC = 0;
-
-  public:
+public:
   Telegram();
 
   uint8_t getResponseNN() {
@@ -28,6 +24,12 @@ class Telegram : public TelegramBase {
   bool isResponseValid();
   bool isRequestComplete();
   bool isRequestValid();
+
+protected:
+  uint8_t responseBuffer[RESPONSE_BUFFER_SIZE] = {0};
+  uint8_t responseBufferPos = 0;
+  uint8_t responseRollingCRC = 0;
+
 };
 
 }  // namespace Ebus
