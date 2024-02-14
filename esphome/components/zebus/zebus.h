@@ -14,16 +14,16 @@ namespace zebus {
 #define BYTES_TO_WORD(HIGH_BYTE, LOW_BYTE) ((((uint16_t)HIGH_BYTE) << 8) | LOW_BYTE)
 #define GET_BYTE(CMD, I) ((uint8_t) ((CMD >> 8 * I) & 0XFF))
 
-#define EBUS_MASTER_HEATER (0x03)
-#define EBUS_MASTER_EXA (0x10)
+  const uint8_t MASTER_HEATER = 0x03;
+  const uint8_t MASTER_EXA = 0x10;
 
-#define CMD_IDENTIFICATION (0x0704)
-#define CMD_DEVICE_CONFIG (0xB509)
+  const uint16_t CMD_IDENTIFICATION = 0x0704;
+  const uint16_t CMD_DEVICE_CONFIG  = 0xB509;
 
-#define DEVICE_CONFIG_SUBCOMMAND_READ (0x0D)
+  const uint8_t DEVICE_CONFIG_SUBCOMMAND_READ = 0x0D;
 
-#define DEVICE_CONFIG_WATER_PRESSURE (0x0200)
-#define DEVICE_CONFIG_DISP_ROOM_TEMP (0x3E00)
+  const uint16_t DEVICE_CONFIG_WATER_PRESSURE = 0x0200;
+  const uint16_t DEVICE_CONFIG_DISP_ROOM_TEMP = 0x3E00;
 
 
 typedef struct {
@@ -136,8 +136,8 @@ public:
 
   void update() override {
 
-    ebus_enqueue_command(createReadConfigCommand(EBUS_MASTER_HEATER, DEVICE_CONFIG_WATER_PRESSURE));
-    ebus_enqueue_command(createReadConfigCommand(EBUS_MASTER_EXA, DEVICE_CONFIG_DISP_ROOM_TEMP));
+    ebus_enqueue_command(createReadConfigCommand(MASTER_HEATER, DEVICE_CONFIG_WATER_PRESSURE));
+    ebus_enqueue_command(createReadConfigCommand(MASTER_EXA, DEVICE_CONFIG_DISP_ROOM_TEMP));
 
   }
 
