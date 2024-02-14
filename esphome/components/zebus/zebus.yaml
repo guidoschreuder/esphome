@@ -45,7 +45,7 @@ sensor:
     lambda: |-
 
       esphome::zebus::zebus_config_t zebus_config = {
-        .interval_ms = 30000,
+        .interval_ms = 15000,
         .uart = {
           .num = 1,
           .pin_rx = 32,
@@ -79,6 +79,7 @@ sensor:
         zebus->return_temp,
         zebus->storage_temp,
         zebus->hot_water_heating,
+        zebus->disp_room_temp,
       };
 
     sensors:
@@ -94,31 +95,66 @@ sensor:
               min_value: 0
               max_value: 4
               ignore_out_of_range: true
-      - name: "Flow Temparature"
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
+      - name: "Flow Temperature"
         id: zebus_flow_temperature
         device_class: "temperature"
         unit_of_measurement: "°C"
         state_class: "measurement"
         accuracy_decimals: 1
         internal: false
-      - name: "Return Temparature"
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
+      - name: "Return Temperature"
         id: zebus_return_temperature
         device_class: "temperature"
         unit_of_measurement: "°C"
         state_class: "measurement"
         accuracy_decimals: 1
         internal: false
-      - name: "Storage Temparature"
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
+      - name: "Storage Temperature"
         id: zebus_storage_temperature
         device_class: "temperature"
         unit_of_measurement: "°C"
         state_class: "measurement"
         accuracy_decimals: 1
         internal: false
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
       - id: zebus_is_heating_measurement
         state_class: "measurement"
         internal: true
-
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 1
+      - name: "Displayed Room Temperature"
+        id: zebus_disp_room_temperature
+        device_class: "temperature"
+        unit_of_measurement: "°C"
+        state_class: "measurement"
+        accuracy_decimals: 1
+        internal: false
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
 
   # Wifi signal sensors
   - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB

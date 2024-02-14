@@ -14,12 +14,16 @@ namespace zebus {
 #define BYTES_TO_WORD(HIGH_BYTE, LOW_BYTE) ((((uint16_t)HIGH_BYTE) << 8) | LOW_BYTE)
 #define GET_BYTE(CMD, I) ((uint8_t) ((CMD >> 8 * I) & 0XFF))
 
+#define EBUS_MASTER_HEATER (0x03)
+#define EBUS_MASTER_EXA (0x10)
+
 #define CMD_IDENTIFICATION (0x0704)
 #define CMD_DEVICE_CONFIG (0xB509)
 
 #define DEVICE_CONFIG_SUBCOMMAND_READ (0x0D)
 
 #define DEVICE_CONFIG_WATER_PRESSURE (0x0200)
+#define DEVICE_CONFIG_DISP_ROOM_TEMP (0x3E00)
 
 
 typedef struct {
@@ -63,6 +67,7 @@ public:
   Sensor *return_temp = new Sensor();
   Sensor *storage_temp = new Sensor();
   Sensor *hot_water_heating = new Sensor();
+  Sensor *disp_room_temp = new Sensor();
 
 
   void setup() override {
@@ -90,9 +95,24 @@ public:
         return;
       }
 
-      float pressure = BYTES_TO_WORD(telegram.getResponseByte(1), telegram.getResponseByte(0)) / 1000.0;
+      water_pressure->publish_state(to_float(telegram, 0, 2, 1000.0));
 
-      water_pressure->publish_state(pressure);
+    } );
+
+    add_message_handler( [&](Ebus::Telegram &telegram) {
+      uint16_t command = BYTES_TO_WORD(telegram.getPB(), telegram.getSB());
+      if (command != CMD_DEVICE_CONFIG) {
+        return;
+      }
+      if (telegram.getRequestByte(0) != DEVICE_CONFIG_SUBCOMMAND_READ) {
+        return;
+      }
+      uint16_t configReadCommand = BYTES_TO_WORD(telegram.getRequestByte(1), telegram.getRequestByte(2));
+      if (configReadCommand != DEVICE_CONFIG_DISP_ROOM_TEMP) {
+        return;
+      }
+
+      disp_room_temp->publish_state(to_float(telegram, 0, 2, 16.0));
 
     } );
 
@@ -105,17 +125,10 @@ public:
         return;
       }
 
-      float flow = telegram.getResponseByte(0) / 2.0;
-      flow_temp->publish_state(flow);
-
-      float ret = telegram.getResponseByte(1) / 2.0;
-      return_temp->publish_state(ret);
-
-      float storage = telegram.getResponseByte(5) / 2.0;
-      storage_temp->publish_state(storage);
-
-      bool is_hwc_heating = telegram.getResponseByte(6) && 0x01;
-      hot_water_heating->publish_state(is_hwc_heating);
+      flow_temp->publish_state(to_float(telegram, 0, 1, 2.0));
+      return_temp->publish_state(to_float(telegram, 1, 1, 2.0));
+      storage_temp->publish_state(to_float(telegram, 5, 1, 2.0));
+      hot_water_heating->publish_state(telegram.getResponseByte(6) && 0x01);
     } );
 
 
@@ -123,7 +136,8 @@ public:
 
   void update() override {
 
-    ebus_enqueue_command(createReadConfigCommand(0x03, DEVICE_CONFIG_WATER_PRESSURE));
+    ebus_enqueue_command(createReadConfigCommand(EBUS_MASTER_HEATER, DEVICE_CONFIG_WATER_PRESSURE));
+    ebus_enqueue_command(createReadConfigCommand(EBUS_MASTER_EXA, DEVICE_CONFIG_DISP_ROOM_TEMP));
 
   }
 
@@ -175,8 +189,12 @@ public:
 
   void handleMessage(Ebus::Telegram &telegram) {
     if (telegram.getState() != Ebus::TelegramState::endCompleted) {
-      // TODO: log errors
-      // handle_error(telegram);
+      ESP_LOGD("Zebus", "Message received with invalid state: %s, QQ:%02X, ZZ:%02X, Command:%02X%02X",
+               telegram.getStateString(),
+               telegram.getQQ(),
+               telegram.getZZ(),
+               telegram.getPB(),
+               telegram.getSB());
       return;
     }
 
@@ -185,6 +203,17 @@ public:
     }
   }
 
+  static uint32_t get_response_bytes(Ebus::Telegram &telegram, uint8_t start, uint8_t length) {
+    uint32_t result = 0;
+    for (uint8_t i = 0; i < 4 && i < length; i++) {
+      result = result | (telegram.getResponseByte(start + i) << (i * 8));
+    }
+    return result;
+  }
+
+  static float to_float(Ebus::Telegram &telegram, uint8_t start, uint8_t length, float divider) {
+    return get_response_bytes(telegram, start, length) / divider;
+  }
 
 protected:
 
