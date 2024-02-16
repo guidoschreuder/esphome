@@ -9,6 +9,7 @@
 namespace esphome {
 namespace ebus {
 
+  static const char *const TAG = "ebus";
 
 #define BYTES_TO_WORD(HIGH_BYTE, LOW_BYTE) ((((uint16_t)HIGH_BYTE) << 8) | LOW_BYTE)
 #define GET_BYTE(CMD, I) ((uint8_t) ((CMD >> 8 * I) & 0XFF))
@@ -161,7 +162,7 @@ public:
       if (xQueueReceive(instance->telegramHistoryQueue, &telegram, pdMS_TO_TICKS(1000))) {
         instance->handleMessage(telegram);
         // TODO: this comment is kept as reference on how to debug stack overflows. Could be generalized.
-        // ESP_LOGD(ZEBUS_LOG_TAG, "Task: %s, Stack Highwater Mark: %d", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
+        // ESP_LOGD(TAG, "Task: %s, Stack Highwater Mark: %d", pcTaskGetTaskName(NULL), uxTaskGetStackHighWaterMark(NULL));
         taskYIELD();
       }
     }
@@ -188,7 +189,7 @@ public:
 
   void handleMessage(Ebus::Telegram &telegram) {
     if (telegram.getState() != Ebus::TelegramState::endCompleted) {
-      ESP_LOGD("Zebus", "Message received with invalid state: %s, QQ:%02X, ZZ:%02X, Command:%02X%02X",
+      ESP_LOGD(TAG, "Message received with invalid state: %s, QQ:%02X, ZZ:%02X, Command:%02X%02X",
                telegram.getStateString(),
                telegram.getQQ(),
                telegram.getZZ(),
@@ -232,7 +233,6 @@ protected:
     ebus = new Ebus::Ebus(zebus_config.ebus.ebus_config);
     ebus->set_uart_send_function( [&](const char * buffer, int16_t length) { return uart_write_bytes(zebus_config.uart.num, buffer, length); } );
 
-    //ebus->set_queue_received_telegram_function(esphome::zebus::ebus_queue_telegram);
     ebus->set_queue_received_telegram_function( [&](Ebus::Telegram &telegram) {
       BaseType_t xHigherPriorityTaskWoken;
       xHigherPriorityTaskWoken = pdFALSE;
@@ -242,7 +242,6 @@ protected:
       }
     } );
 
-    //ebus->set_deueue_command_function(esphome::zebus::ebus_dequeue_command);
     ebus->set_deueue_command_function( [&](void *const command) {
       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       if (xQueueReceiveFromISR(telegramCommandQueue, command, &xHigherPriorityTaskWoken)) {
