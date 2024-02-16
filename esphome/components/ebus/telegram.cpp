@@ -5,13 +5,17 @@ namespace Ebus {
 TelegramBase::TelegramBase() {
 }
 
+void TelegramBase::setState(TelegramState new_state) {
+  this->state = new_state;
+}
+
 TelegramState TelegramBase::getState() {
-  return state;
+  return this->state;
 }
 
 #define X(name, int) case int: return ""#name"";
 const char * TelegramBase::getStateString() {
-  switch((int8_t) state) {
+  switch((int8_t) this->state) {
     TELEGRAM_STATE_TABLE
     default:
       return "[INVALID STATE]";
@@ -19,131 +23,127 @@ const char * TelegramBase::getStateString() {
 }
 #undef X
 
-void TelegramBase::setState(TelegramState newState) {
-  state = newState;
-}
 
-
-void TelegramBase::pushBuffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t *crc, int max_pos) {
-  if (waitForEscaped) {
+void TelegramBase::push_buffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t *crc, int max_pos) {
+  if (this->wait_for_escaped_char_) {
     if (*pos < max_pos) {
       *crc = Elf::crc8_calc(cr, *crc);
     }
     buffer[(*pos)] = (cr == 0x0 ? ESC : SYN);
-    waitForEscaped = false;
+    this->wait_for_escaped_char_ = false;
   } else {
     if (*pos < max_pos) {
       *crc = Elf::crc8_calc(cr, *crc);
     }
     buffer[(*pos)++] = cr;
-    waitForEscaped = (cr == ESC);
+    this->wait_for_escaped_char_ = (cr == ESC);
   }
 }
 
 TelegramType TelegramBase::getType() {
-  if (getZZ() == ESC) {
+  if (this->getZZ() == ESC) {
     return TelegramType::Unknown;
   }
-  if (getZZ() == BROADCAST_ADDRESS) {
+  if (this->getZZ() == BROADCAST_ADDRESS) {
     return TelegramType::Broadcast;
   }
-  if (Elf::is_master(getZZ())) {
+  if (Elf::is_master(this->getZZ())) {
     return TelegramType::MasterMaster;
   }
   return TelegramType::MasterSlave;
 }
 
-int16_t TelegramBase::getRequestByte(uint8_t pos) {
-  if (pos > getNN() || pos >= MAX_DATA_LENGTH) {
+int16_t TelegramBase::get_request_byte(uint8_t pos) {
+  if (pos > this->getNN() || pos >= MAX_DATA_LENGTH) {
     return -1;
   }
-  return requestBuffer[OFFSET_DATA + pos];
+  return this->requestBuffer[OFFSET_DATA + pos];
 }
 
-uint8_t TelegramBase::getRequestCRC() {
-  return requestBuffer[OFFSET_DATA + getNN()];
+uint8_t TelegramBase::get_request_crc() {
+  return this->requestBuffer[OFFSET_DATA + this->getNN()];
 }
 
-void TelegramBase::pushReqData(uint8_t cr) {
-  pushBuffer(cr, requestBuffer, &requestBufferPos, &requestRollingCRC, OFFSET_DATA + getNN());
+void TelegramBase::push_req_data(uint8_t cr) {
+  this->push_buffer(cr, requestBuffer, &requestBufferPos, &requestRollingCRC, OFFSET_DATA + getNN());
 }
 
 bool TelegramBase::isAckExpected() {
-  return (getType() != TelegramType::Broadcast);
+  return (this->getType() != TelegramType::Broadcast);
 }
 
 bool TelegramBase::isResponseExpected() {
-  return (getType() == TelegramType::MasterSlave);
+  return (this->getType() == TelegramType::MasterSlave);
 }
 
 bool TelegramBase::isFinished() {
-  return state < TelegramState::unknown;
+  return this->state < TelegramState::unknown;
 }
 
 
 Telegram::Telegram() {
-  state = TelegramState::waitForSyn;
+  this->state = TelegramState::waitForSyn;
 }
 
 int16_t Telegram::getResponseByte(uint8_t pos) {
-  if (pos > getResponseNN() || pos >= MAX_DATA_LENGTH) {
+  if (pos > this->getResponseNN() || pos >= MAX_DATA_LENGTH) {
     return INVALID_RESPONSE_BYTE;
   }
-  return responseBuffer[RESPONSE_OFFSET + pos];
+  return this->responseBuffer[RESPONSE_OFFSET + pos];
 }
 
 uint8_t Telegram::getResponseCRC() {
-  return responseBuffer[RESPONSE_OFFSET + getResponseNN()];
+  return this->responseBuffer[RESPONSE_OFFSET + this->getResponseNN()];
 }
 
 void Telegram::pushRespData(uint8_t cr) {
-  pushBuffer(cr, responseBuffer, &responseBufferPos, &responseRollingCRC, RESPONSE_OFFSET + getResponseNN());
+  this->push_buffer(cr, responseBuffer, &responseBufferPos, &responseRollingCRC, RESPONSE_OFFSET + getResponseNN());
 }
 
 bool Telegram::isResponseComplete() {
-  return (state > TelegramState::waitForSyn || state == TelegramState::endCompleted) &&
-         (responseBufferPos > RESPONSE_OFFSET) &&
-         (responseBufferPos == (RESPONSE_OFFSET + getResponseNN() + 1)) &&
-         !waitForEscaped;
+  return (this->state > TelegramState::waitForSyn || this->state == TelegramState::endCompleted) &&
+         (this->responseBufferPos > RESPONSE_OFFSET) &&
+         (this->responseBufferPos == (RESPONSE_OFFSET + this->getResponseNN() + 1)) &&
+         !this->wait_for_escaped_char_;
 }
 
 bool Telegram::isResponseValid() {
-  return isResponseComplete() && getResponseCRC() == responseRollingCRC;
+  return this->isResponseComplete() && this->getResponseCRC() == responseRollingCRC;
 }
 
-bool Telegram::isRequestComplete() {
-  return (state > TelegramState::waitForSyn || state == TelegramState::endCompleted) &&
-         (requestBufferPos > OFFSET_DATA) &&
-         (requestBufferPos == (OFFSET_DATA + getNN() + 1)) && !waitForEscaped;
+bool Telegram::is_request_complete() {
+  return (this->state > TelegramState::waitForSyn || this->state == TelegramState::endCompleted) &&
+         (this->requestBufferPos > OFFSET_DATA) &&
+         (this->requestBufferPos == (OFFSET_DATA + this->getNN() + 1)) && !this->wait_for_escaped_char_;
 }
-bool Telegram::isRequestValid() {
-  return isRequestComplete() && getRequestCRC() == requestRollingCRC;
+bool Telegram::is_request_valid() {
+  return this->is_request_complete() && this->get_request_crc() == this->requestRollingCRC;
 }
 
 
 SendCommand::SendCommand() {
-  state = TelegramState::endCompleted;
+  this->state = TelegramState::endCompleted;
 }
 
 SendCommand::SendCommand(uint8_t QQ, uint8_t ZZ, uint8_t PB, uint8_t SB, uint8_t NN, uint8_t *data) {
-  state = TelegramState::waitForSend;
-  pushReqData(QQ);
-  pushReqData(ZZ);
-  pushReqData(PB);
-  pushReqData(SB);
-  pushReqData(NN);
+  this->state = TelegramState::waitForSend;
+  this->push_req_data(QQ);
+  this->push_req_data(ZZ);
+  this->push_req_data(PB);
+  this->push_req_data(SB);
+  this->push_req_data(NN);
   for (int i = 0; i < NN; i++) {
-    pushReqData(data[i]);
+    this->push_req_data(data[i]);
   }
-  pushReqData(requestRollingCRC);
+  this->push_req_data(this->requestRollingCRC);
 }
 
-bool SendCommand::canRetry(int8_t max_tries) {
-  return numTries++ < max_tries;
+bool SendCommand::can_retry(int8_t max_tries) {
+  return this->tries_count_++ < max_tries;
 }
 
-uint8_t SendCommand::getCRC() {
-  return requestRollingCRC;
+uint8_t SendCommand::get_crc() {
+  return this->requestRollingCRC;
 }
 
 }  // namespace Ebus

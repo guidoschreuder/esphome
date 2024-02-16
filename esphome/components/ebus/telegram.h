@@ -90,14 +90,14 @@ public:
     return nn;
   }
 
+  void setState(TelegramState new_state);
   TelegramState getState();
   const char * getStateString();
 
-  void setState(TelegramState newState);
   TelegramType getType();
-  int16_t getRequestByte(uint8_t pos);
-  uint8_t getRequestCRC();
-  void pushReqData(uint8_t cr);
+  int16_t get_request_byte(uint8_t pos);
+  uint8_t get_request_crc();
+  void push_req_data(uint8_t cr);
   bool isAckExpected();
   bool isResponseExpected();
   bool isFinished();
@@ -107,8 +107,8 @@ protected:
   uint8_t requestBuffer[REQUEST_BUFFER_SIZE] = {ESC, ESC};  // initialize QQ and ZZ with ESC char to distinguish from valid master 0
   uint8_t requestBufferPos = 0;
   uint8_t requestRollingCRC = 0;
-  bool waitForEscaped = false;
-  void pushBuffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t *crc, int max_pos);
+  bool wait_for_escaped_char_ = false;
+  void push_buffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t *crc, int max_pos);
 
 };
 
@@ -131,8 +131,8 @@ public:
   void pushRespData(uint8_t cr);
   bool isResponseComplete();
   bool isResponseValid();
-  bool isRequestComplete();
-  bool isRequestValid();
+  bool is_request_complete();
+  bool is_request_valid();
 
 protected:
   uint8_t responseBuffer[RESPONSE_BUFFER_SIZE] = {0};
@@ -145,11 +145,11 @@ class SendCommand : public TelegramBase {
 public:
   SendCommand();
   SendCommand(uint8_t QQ, uint8_t ZZ, uint8_t PB, uint8_t SB, uint8_t NN, uint8_t *data);
-  bool canRetry(int8_t max_tries);
-  uint8_t getCRC();
+  bool can_retry(int8_t max_tries);
+  uint8_t get_crc();
 
 protected:
-  uint8_t numTries = 0;
+  uint8_t tries_count_ = 0;
 
 };
 

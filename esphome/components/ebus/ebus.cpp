@@ -3,24 +3,24 @@
 namespace Ebus {
 
 Ebus::Ebus(ebus_config_t &config) {
-  masterAddress = config.master_address;
-  maxTries = config.max_tries;
-  maxLockCounter = config.max_lock_counter;
+  this->master_address_ = config.master_address;
+  this->max_tries_ = config.max_tries;
+  this->max_lock_counter_ = config.max_lock_counter;
 }
 
 void Ebus::set_uart_send_function(std::function<void(const char *, int16_t)> uart_send) {
-  uartSend = uart_send;
+  this->uart_send_ = uart_send;
 }
 
 void Ebus::set_queue_received_telegram_function(std::function<void(Telegram &telegram)> queue_received_telegram) {
-  queue_received_telegram_ = queue_received_telegram;
+  this->queue_received_telegram_ = queue_received_telegram;
 }
 
 void Ebus::set_deueue_command_function(std::function<bool(void *const)> dequeue_command) {
-  dequeue_command_ = dequeue_command;
+  this->dequeue_command_ = dequeue_command;
 }
 
-uint8_t Ebus::uart_send_char(uint8_t cr, bool esc, bool runCrc, uint8_t crc_init) {
+uint8_t Ebus::uart_send_char(uint8_t cr, bool esc, bool run_crc, uint8_t crc_init) {
   char buffer[2];
   uint8_t crc = 0;
   uint8_t len = 1;
@@ -35,8 +35,8 @@ uint8_t Ebus::uart_send_char(uint8_t cr, bool esc, bool runCrc, uint8_t crc_init
   } else {
     buffer[0] = cr;
   }
-  uartSend(buffer, len);
-  if (!runCrc) {
+  uart_send_(buffer, len);
+  if (!run_crc) {
     return 0;
   }
   crc = Elf::crc8_calc(buffer[0], crc_init);
@@ -47,201 +47,194 @@ uint8_t Ebus::uart_send_char(uint8_t cr, bool esc, bool runCrc, uint8_t crc_init
 }
 
 void Ebus::uart_send_char(uint8_t cr, bool esc) {
-  uart_send_char(cr, esc, false, 0);
+  this->uart_send_char(cr, esc, false, 0);
 }
 
 void Ebus::uart_send_remaining_request_part(SendCommand &command) {
-  uart_send_char(command.getZZ());
-  uart_send_char(command.getPB());
-  uart_send_char(command.getSB());
-  uart_send_char(command.getNN());
-  // NOTE: use <= in loop, so we also get CRC
+  this->uart_send_char(command.getZZ());
+  this->uart_send_char(command.getPB());
+  this->uart_send_char(command.getSB());
+  this->uart_send_char(command.getNN());
   for (int i = 0; i < command.getNN(); i++) {
-    uart_send_char((uint8_t)command.getRequestByte(i));
+    this->uart_send_char((uint8_t)command.get_request_byte(i));
   }
-  uart_send_char(command.getCRC());
+  this->uart_send_char(command.get_crc());
 }
 
-void Ebus::process_received_char(unsigned char receivedByte) {
+void Ebus::process_received_char(unsigned char received_byte) {
   // keep track of number of character between last 2 SYN chars
   // this is needed in case of arbitration
-  if (receivedByte == SYN) {
-    state = charCountSinceLastSyn == 1 ? EbusState::arbitration : EbusState::normal;
-    charCountSinceLastSyn = 0;
+  if (received_byte == SYN) {
+    this->state = this->char_count_since_last_syn_ == 1 ? EbusState::arbitration : EbusState::normal;
+    this->char_count_since_last_syn_ = 0;
 
-    if (lockCounter > 0 && state == EbusState::normal) {
-      lockCounter--;
+    if (this->lock_counter_ > 0 && this->state == EbusState::normal) {
+      this->lock_counter_--;
     }
 
   } else {
-    charCountSinceLastSyn++;
+    this->char_count_since_last_syn_++;
   }
 
-  if (receivingTelegram.isFinished()) {
-    if (queue_received_telegram_) {
-      queue_received_telegram_(receivingTelegram);
+  if (this->receiving_telegram_.isFinished()) {
+    if (this->queue_received_telegram_) {
+      this->queue_received_telegram_(this->receiving_telegram_);
     }
-    receivingTelegram = Telegram();
+    this->receiving_telegram_ = Telegram();
   }
 
-  if (activeCommand.isFinished() && dequeue_command_) {
+  if (this->active_command_.isFinished() && this->dequeue_command_) {
     SendCommand dequeued;
-    if (dequeue_command_(&dequeued)) {
-      activeCommand = dequeued;
+    if (this->dequeue_command_(&dequeued)) {
+      this->active_command_ = dequeued;
     }
   }
 
-  switch (receivingTelegram.getState()) {
+  switch (this->receiving_telegram_.getState()) {
   case TelegramState::waitForSyn:
-    if (receivedByte == SYN) {
-      receivingTelegram.setState(TelegramState::waitForArbitration);
+    if (received_byte == SYN) {
+      this->receiving_telegram_.setState(TelegramState::waitForArbitration);
     }
     break;
   case TelegramState::waitForArbitration:
-    if (receivedByte != SYN) {
-      receivingTelegram.pushReqData(receivedByte);
-      receivingTelegram.setState(TelegramState::waitForRequestData);
+    if (received_byte != SYN) {
+      this->receiving_telegram_.push_req_data(received_byte);
+      this->receiving_telegram_.setState(TelegramState::waitForRequestData);
     }
     break;
   case TelegramState::waitForRequestData:
-    if (receivedByte == SYN) {
-      if (receivingTelegram.getZZ() == ESC) {
-        receivingTelegram.setState(TelegramState::endArbitration);
+    if (received_byte == SYN) {
+      if (this->receiving_telegram_.getZZ() == ESC) {
+        this->receiving_telegram_.setState(TelegramState::endArbitration);
       } else {
-        receivingTelegram.setState(TelegramState::endErrorUnexpectedSyn);
+        this->receiving_telegram_.setState(TelegramState::endErrorUnexpectedSyn);
       }
     } else {
-      receivingTelegram.pushReqData(receivedByte);
-      if (receivingTelegram.isRequestComplete()) {
-        receivingTelegram.setState(receivingTelegram.isAckExpected() ? TelegramState::waitForRequestAck : TelegramState::endCompleted);
+      this->receiving_telegram_.push_req_data(received_byte);
+      if (this->receiving_telegram_.is_request_complete()) {
+        this->receiving_telegram_.setState(this->receiving_telegram_.isAckExpected() ? TelegramState::waitForRequestAck : TelegramState::endCompleted);
       }
     }
     break;
   case TelegramState::waitForRequestAck:
-    switch (receivedByte) {
+    switch (received_byte) {
     case ACK:
-      receivingTelegram.setState(receivingTelegram.isResponseExpected() ? TelegramState::waitForResponseData : TelegramState::endCompleted);
+      this->receiving_telegram_.setState(this->receiving_telegram_.isResponseExpected() ? TelegramState::waitForResponseData : TelegramState::endCompleted);
       break;
     case NACK:
-      receivingTelegram.setState(TelegramState::endErrorRequestNackReceived);
+      this->receiving_telegram_.setState(TelegramState::endErrorRequestNackReceived);
       break;
     default:
-      receivingTelegram.setState(TelegramState::endErrorRequestNoAck);
+      this->receiving_telegram_.setState(TelegramState::endErrorRequestNoAck);
     }
     break;
   case TelegramState::waitForResponseData:
-    if (receivedByte == SYN) {
-      receivingTelegram.setState(TelegramState::endErrorUnexpectedSyn);
+    if (received_byte == SYN) {
+      this->receiving_telegram_.setState(TelegramState::endErrorUnexpectedSyn);
     } else {
-      receivingTelegram.pushRespData(receivedByte);
-      if (receivingTelegram.isResponseComplete()) {
-        receivingTelegram.setState(TelegramState::waitForResponseAck);
+      this->receiving_telegram_.pushRespData(received_byte);
+      if (this->receiving_telegram_.isResponseComplete()) {
+        this->receiving_telegram_.setState(TelegramState::waitForResponseAck);
       }
     }
     break;
   case TelegramState::waitForResponseAck:
-    switch (receivedByte) {
+    switch (received_byte) {
     case ACK:
-      receivingTelegram.setState(TelegramState::endCompleted);
+      this->receiving_telegram_.setState(TelegramState::endCompleted);
       break;
     case NACK:
-      receivingTelegram.setState(TelegramState::endErrorResponseNackReceived);
+      this->receiving_telegram_.setState(TelegramState::endErrorResponseNackReceived);
       break;
     default:
-      receivingTelegram.setState(TelegramState::endErrorResponseNoAck);
+      this->receiving_telegram_.setState(TelegramState::endErrorResponseNoAck);
     }
     break;
   default:
     break;
   }
 
-  switch (activeCommand.getState()) {
+  switch (this->active_command_.getState()) {
   case TelegramState::waitForSend:
-    if (receivedByte == SYN && state == EbusState::normal && lockCounter == 0) {
-      activeCommand.setState(TelegramState::waitForArbitration);
-      uart_send_char(activeCommand.getQQ());
+    if (received_byte == SYN && state == EbusState::normal && this->lock_counter_ == 0) {
+      this->active_command_.setState(TelegramState::waitForArbitration);
+      this->uart_send_char(this->active_command_.getQQ());
     }
     break;
   case TelegramState::waitForArbitration:
-    if (receivedByte == activeCommand.getQQ()) {
+    if (received_byte == this->active_command_.getQQ()) {
       // we won arbitration
-      uart_send_remaining_request_part(activeCommand);
-      if (activeCommand.isAckExpected()) {
-        activeCommand.setState(TelegramState::waitForCommandAck);
+      this->uart_send_remaining_request_part(this->active_command_);
+      if (this->active_command_.isAckExpected()) {
+        this->active_command_.setState(TelegramState::waitForCommandAck);
       } else {
-        activeCommand.setState(TelegramState::endCompleted);
-        lockCounter = maxLockCounter;
+        this->active_command_.setState(TelegramState::endCompleted);
+        this->lock_counter_ = this->max_lock_counter_;
       }
-    } else if (Elf::get_priority_class(receivedByte) == Elf::get_priority_class(activeCommand.getQQ())) {
+    } else if (Elf::get_priority_class(received_byte) == Elf::get_priority_class(this->active_command_.getQQ())) {
       // eligible for round 2
-      activeCommand.setState(TelegramState::waitForArbitration2nd);
+      this->active_command_.setState(TelegramState::waitForArbitration2nd);
     } else {
       // lost arbitration, try again later if retries left
-      activeCommand.setState(activeCommand.canRetry(maxTries) ? TelegramState::waitForSend : TelegramState::endSendFailed);
+      this->active_command_.setState(this->active_command_.can_retry(this->max_tries_) ? TelegramState::waitForSend : TelegramState::endSendFailed);
     }
     break;
   case TelegramState::waitForArbitration2nd:
-    if (receivedByte == SYN) {
-      uart_send_char(activeCommand.getQQ());
-    } else if (receivedByte == activeCommand.getQQ()) {
+    if (received_byte == SYN) {
+      this->uart_send_char(this->active_command_.getQQ());
+    } else if (received_byte == this->active_command_.getQQ()) {
       // won round 2
-      uart_send_remaining_request_part(activeCommand);
-      if (activeCommand.isAckExpected()) {
-        activeCommand.setState(TelegramState::waitForCommandAck);
+      this->uart_send_remaining_request_part(this->active_command_);
+      if (this->active_command_.isAckExpected()) {
+        this->active_command_.setState(TelegramState::waitForCommandAck);
       } else {
-        activeCommand.setState(TelegramState::endCompleted);
-        lockCounter = maxLockCounter;
+        this->active_command_.setState(TelegramState::endCompleted);
+        this->lock_counter_ = this->max_lock_counter_;
       }
     } else {
       // try again later if retries left
-      activeCommand.setState(activeCommand.canRetry(maxTries) ? TelegramState::waitForSend : TelegramState::endSendFailed);
+      this->active_command_.setState(this->active_command_.can_retry(this->max_tries_) ? TelegramState::waitForSend : TelegramState::endSendFailed);
     }
     break;
   case TelegramState::waitForCommandAck:
-    if (receivedByte == ACK) {
-      activeCommand.setState(TelegramState::endCompleted);
-      lockCounter = maxLockCounter;
-    } else if (receivedByte == SYN) { // timeout waiting for ACK signaled by AUTO-SYN
-      activeCommand.setState(activeCommand.canRetry(maxTries) ? TelegramState::waitForSend : TelegramState::endSendFailed);
+    if (received_byte == ACK) {
+      this->active_command_.setState(TelegramState::endCompleted);
+      this->lock_counter_ = this->max_lock_counter_;
+    } else if (received_byte == SYN) { // timeout waiting for ACK signaled by AUTO-SYN
+      this->active_command_.setState(this->active_command_.can_retry(this->max_tries_) ? TelegramState::waitForSend : TelegramState::endSendFailed);
     }
     break;
   default:
     break;
   }
 
-  // responses to our commands are stored in receivingTelegram
+  // responses to our commands are stored in receiving_telegram_
   // when response is completed send ACK or NACK when we were the master
-  if (receivingTelegram.getState() == TelegramState::waitForResponseAck &&
-      receivingTelegram.getQQ() == masterAddress) {
-    if (receivingTelegram.isResponseValid()) {
-      uart_send_char(ACK);
-      uart_send_char(SYN, false);
+  if (this->receiving_telegram_.getState() == TelegramState::waitForResponseAck &&
+      this->receiving_telegram_.getQQ() == this->master_address_) {
+    if (this->receiving_telegram_.isResponseValid()) {
+      this->uart_send_char(ACK);
+      this->uart_send_char(SYN, false);
     } else {
-      uart_send_char(NACK);
+      this->uart_send_char(NACK);
     }
   }
 
   // Handle our responses
-  handle_response(receivingTelegram);
+  this->handle_response(this->receiving_telegram_);
 
 }
 
-#ifdef UNIT_TEST
-Telegram Ebus::getReceivingTelegram() {
-  return receivingTelegram;
-}
-#endif
-
-void Ebus::add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *)> sendResponseHandler) {
-  send_response_handlers_.push_back(sendResponseHandler);
+void Ebus::add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *)> send_response_handler) {
+  send_response_handlers_.push_back(send_response_handler);
 }
 
 void Ebus::handle_response(Telegram &telegram) {
   if (telegram.getState() != TelegramState::waitForRequestAck ||
-      telegram.getZZ() != Elf::to_slave(masterAddress)) {
+      telegram.getZZ() != Elf::to_slave(this->master_address_)) {
     return;
   }
-  if (!telegram.isRequestValid()) {
+  if (!telegram.is_request_valid()) {
     uart_send_char(NACK);
     return;
   }

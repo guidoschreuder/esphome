@@ -32,38 +32,31 @@ class Ebus {
 public:
   explicit Ebus(ebus_config_t &config);
   void set_uart_send_function(std::function<void(const char *, int16_t)> uart_send);
-  //void set_queue_received_telegram_function(void (*queue_received_telegram)(Telegram &telegram));
   void set_queue_received_telegram_function(std::function<void(Telegram &telegram)> queue_received_telegram);
-  //void set_deueue_command_function(bool (*dequeue_command)(void *const command));
   void set_deueue_command_function(std::function<bool(void *const)> dequeue_command);
   void process_received_char(unsigned char receivedByte);
-  //void add_send_response_handler(send_response_handler);
   void add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *)>);
 
 
 protected:
-  uint8_t masterAddress;
-  uint8_t maxTries;
-  uint8_t maxLockCounter;
-  uint8_t lockCounter = 0;
-  uint8_t charCountSinceLastSyn = 0;
+  uint8_t master_address_;
+  uint8_t max_tries_;
+  uint8_t max_lock_counter_;
+  uint8_t lock_counter_ = 0;
+  uint8_t char_count_since_last_syn_ = 0;
   EbusState state = EbusState::arbitration;
-  Telegram receivingTelegram;
-  SendCommand activeCommand;
-  //std::list<send_response_handler> send_response_handlers_;
+  Telegram receiving_telegram_;
+  SendCommand active_command_;
   std::list<std::function<uint8_t(Telegram &, uint8_t *)>> send_response_handlers_;
 
-  std::function<void(const char *, int16_t)> uartSend;
+  std::function<void(const char *, int16_t)> uart_send_;
   std::function<void(Telegram &)> queue_received_telegram_;
   std::function<bool(void *const&)> dequeue_command_;
-  uint8_t uart_send_char(uint8_t cr, bool esc, bool runCrc, uint8_t crc_init);
+  uint8_t uart_send_char(uint8_t cr, bool esc, bool run_crc, uint8_t crc_init);
   void uart_send_char(uint8_t cr, bool esc = true);
   void uart_send_remaining_request_part(SendCommand &command);
   void handle_response(Telegram &telegram);
 
-#ifdef UNIT_TEST
-  Telegram getReceivingTelegram();
-#endif
 };
 
 }  // namespace Ebus
