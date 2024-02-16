@@ -1,5 +1,4 @@
-#ifndef ZEBUS_EBUS_H
-#define ZEBUS_EBUS_H
+#pragma once
 
 #include "esphome.h"
 #include "ebus.h"
@@ -8,7 +7,7 @@
 #include <soc/uart_reg.h>
 
 namespace esphome {
-namespace zebus {
+namespace ebus {
 
 
 #define BYTES_TO_WORD(HIGH_BYTE, LOW_BYTE) ((((uint16_t)HIGH_BYTE) << 8) | LOW_BYTE)
@@ -309,7 +308,5 @@ protected:
 
 };
 
-
-} // namespace zebus
+} // namespace ebus
 } // namespace esphome
-#endif

@@ -39,7 +39,7 @@ sensor:
   - platform: "custom"
     lambda: |-
 
-      esphome::zebus::zebus_config_t zebus_config = {
+      esphome::ebus::zebus_config_t zebus_config = {
         .interval_ms = 15000,
         .uart = {
           .num = 1,
@@ -65,7 +65,7 @@ sensor:
         }
       };
 
-      auto zebus = new esphome::zebus::Zebus(zebus_config);
+      auto zebus = new esphome::ebus::Zebus(zebus_config);
       App.register_component(zebus);
 
       return {
