@@ -1,0 +1,41 @@
+esphome:
+  name: ebus-test
+
+esp32:
+  board: esp32doit-devkit-v1
+  framework:
+    type: arduino
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+ebus:
+  master_address: 0x00
+  history_queue_size: 32
+  command_queue_size: 16
+  uart:
+    num: 1
+    tx_pin: 33
+    rx_pin: 32
+
+sensor:
+  - platform: ebus
+    sensors:
+      - name: "Water Pressure"
+        id: zebus_water_pressure
+        device_class: "pressure"
+        unit_of_measurement: bar
+        state_class: "measurement"
+        accuracy_decimals: 3
+        internal: false
+        filters:
+          - clamp:
+              min_value: 0
+              max_value: 4
+              ignore_out_of_range: true
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
