@@ -71,42 +71,42 @@ public:
   TelegramBase();
 
   uint8_t getQQ() {
-    return requestBuffer[OFFSET_QQ];
+    return this->request_buffer[OFFSET_QQ];
   }
   uint8_t getZZ() {
-    return requestBuffer[OFFSET_ZZ];
+    return this->request_buffer[OFFSET_ZZ];
   }
   uint8_t getPB() {
-    return requestBuffer[OFFSET_PB];
+    return this->request_buffer[OFFSET_PB];
   }
   uint8_t getSB() {
-    return requestBuffer[OFFSET_SB];
+    return this->request_buffer[OFFSET_SB];
   }
   uint8_t getNN() {
-    uint8_t nn = requestBuffer[OFFSET_NN];
+    uint8_t nn = this->request_buffer[OFFSET_NN];
     if (nn >= MAX_DATA_LENGTH) {
       return 0;
     }
     return nn;
   }
 
-  void setState(TelegramState new_state);
-  TelegramState getState();
-  const char * getStateString();
+  void set_state(TelegramState new_state);
+  TelegramState get_state();
+  const char * get_state_string();
 
-  TelegramType getType();
+  TelegramType get_type();
   int16_t get_request_byte(uint8_t pos);
   uint8_t get_request_crc();
   void push_req_data(uint8_t cr);
-  bool isAckExpected();
-  bool isResponseExpected();
-  bool isFinished();
+  bool is_ack_expected();
+  bool is_response_expected();
+  bool is_finished();
 
 protected:
   TelegramState state;
-  uint8_t requestBuffer[REQUEST_BUFFER_SIZE] = {ESC, ESC};  // initialize QQ and ZZ with ESC char to distinguish from valid master 0
-  uint8_t requestBufferPos = 0;
-  uint8_t requestRollingCRC = 0;
+  uint8_t request_buffer[REQUEST_BUFFER_SIZE] = {ESC, ESC};  // initialize QQ and ZZ with ESC char to distinguish from valid master 0
+  uint8_t request_buffer_pos = 0;
+  uint8_t request_rolling_crc = 0;
   bool wait_for_escaped_char_ = false;
   void push_buffer(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8_t *crc, int max_pos);
 
@@ -118,26 +118,26 @@ public:
   Telegram();
 
   uint8_t getResponseNN() {
-    uint8_t nn = responseBuffer[0];
+    uint8_t nn = response_buffer[0];
     if (nn >= MAX_DATA_LENGTH) {
       return 0;
     }
     return nn;
   }
 
-  int16_t getResponseByte(uint8_t pos);
-  uint8_t getResponseCRC();
+  int16_t get_response_byte(uint8_t pos);
+  uint8_t get_response_crc();
 
-  void pushRespData(uint8_t cr);
-  bool isResponseComplete();
-  bool isResponseValid();
+  void push_response_data(uint8_t cr);
+  bool is_response_complete();
+  bool is_response_valid();
   bool is_request_complete();
   bool is_request_valid();
 
 protected:
-  uint8_t responseBuffer[RESPONSE_BUFFER_SIZE] = {0};
-  uint8_t responseBufferPos = 0;
-  uint8_t responseRollingCRC = 0;
+  uint8_t response_buffer[RESPONSE_BUFFER_SIZE] = {0};
+  uint8_t response_buffer_pos = 0;
+  uint8_t response_rolling_crc = 0;
 
 };
 

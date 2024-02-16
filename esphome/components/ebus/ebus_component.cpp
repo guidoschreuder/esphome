@@ -13,10 +13,10 @@ void EbusComponent::dump_config() {
 }
 
 void EbusComponent::setup() {
-  setup_queues();
-  setup_ebus();
-  setup_uart();
-  setup_tasks();
+  this->setup_queues();
+  this->setup_ebus();
+  this->setup_uart();
+  this->setup_tasks();
 }
 
 void EbusComponent::set_master_address(uint8_t master_address) {
@@ -28,7 +28,6 @@ void EbusComponent::set_max_tries(uint8_t max_tries) {
 void EbusComponent::set_max_lock_counter(uint8_t max_lock_counter) {
   this->max_lock_counter_ = max_lock_counter;
 }
-
 void EbusComponent::set_uart_num(uint8_t uart_num) {
   this->uart_num_ = uart_num;
 }
@@ -46,8 +45,8 @@ void EbusComponent::set_command_queue_size(uint8_t command_queue_size) {
 }
 
 void EbusComponent::setup_queues() {
-  history_queue_ = xQueueCreate(this->history_queue_size_, sizeof(Ebus::Telegram));
-  command_queue_ = xQueueCreate(this->command_queue_size_, sizeof(Ebus::Telegram));
+  this->history_queue_ = xQueueCreate(this->history_queue_size_, sizeof(Ebus::Telegram));
+  this->command_queue_ = xQueueCreate(this->command_queue_size_, sizeof(Ebus::Telegram));
 }
 void EbusComponent::setup_ebus() {
   Ebus::ebus_config_t ebus_config = Ebus::ebus_config_t {
@@ -55,11 +54,11 @@ void EbusComponent::setup_ebus() {
     .max_tries = this->max_tries_,
     .max_lock_counter = this->max_lock_counter_,
   };
-  ebus = new Ebus::Ebus(ebus_config);
+  this->ebus = new Ebus::Ebus(ebus_config);
 
-  ebus->set_uart_send_function( [&](const char * buffer, int16_t length) { return uart_write_bytes(this->uart_num_, buffer, length); } );
+  this->ebus->set_uart_send_function( [&](const char * buffer, int16_t length) { return uart_write_bytes(this->uart_num_, buffer, length); } );
 
-  ebus->set_queue_received_telegram_function( [&](Ebus::Telegram &telegram) {
+  this->ebus->set_queue_received_telegram_function( [&](Ebus::Telegram &telegram) {
     BaseType_t xHigherPriorityTaskWoken;
     xHigherPriorityTaskWoken = pdFALSE;
     xQueueSendToBackFromISR(this->history_queue_, &telegram, &xHigherPriorityTaskWoken);
@@ -68,7 +67,7 @@ void EbusComponent::setup_ebus() {
     }
   } );
 
-  ebus->set_deueue_command_function( [&](void *const command) {
+  this->ebus->set_deueue_command_function( [&](void *const command) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (xQueueReceiveFromISR(this->command_queue_, command, &xHigherPriorityTaskWoken)) {
       if (xHigherPriorityTaskWoken) {
@@ -142,9 +141,9 @@ void EbusComponent::process_received_messages(void *pvParameter) {
 }
 
 void EbusComponent::handle_message(Ebus::Telegram &telegram) {
-  if (telegram.getState() != Ebus::TelegramState::endCompleted) {
+  if (telegram.get_state() != Ebus::TelegramState::endCompleted) {
     ESP_LOGD(TAG, "Message received with invalid state: %s, QQ:%02X, ZZ:%02X, Command:%02X%02X",
-             telegram.getStateString(),
+             telegram.get_state_string(),
              telegram.getQQ(),
              telegram.getZZ(),
              telegram.getPB(),
