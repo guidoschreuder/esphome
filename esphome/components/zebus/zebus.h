@@ -148,7 +148,7 @@ public:
       uint8_t receivedByte;
       int len = uart_read_bytes(instance->zebus_config.uart.num, &receivedByte, 1, 20 / portTICK_PERIOD_MS);
       if (len) {
-        instance->ebus->processReceivedChar(receivedByte);
+        instance->ebus->process_received_char(receivedByte);
         taskYIELD();
       }
     }
@@ -176,7 +176,7 @@ public:
     uint8_t data[] = { DEVICE_CONFIG_SUBCOMMAND_READ, GET_BYTE(config_element, 1), GET_BYTE(config_element, 0)};
     return Ebus::SendCommand(  //
         zebus_config.ebus.ebus_config.master_address,
-        Ebus::Elf::toSlave(target),
+        Ebus::Elf::to_slave(target),
         GET_BYTE(CMD_DEVICE_CONFIG, 1),
         GET_BYTE(CMD_DEVICE_CONFIG, 0),
         3,
@@ -231,10 +231,10 @@ protected:
 
   void setup_ebus() {
     ebus = new Ebus::Ebus(zebus_config.ebus.ebus_config);
-    ebus->setUartSendFunction( [&](const char * buffer, int16_t length) { return uart_write_bytes(zebus_config.uart.num, buffer, length); } );
+    ebus->set_uart_send_function( [&](const char * buffer, int16_t length) { return uart_write_bytes(zebus_config.uart.num, buffer, length); } );
 
-    //ebus->setQueueReceivedTelegramFunction(esphome::zebus::ebus_queue_telegram);
-    ebus->setQueueReceivedTelegramFunction( [&](Ebus::Telegram &telegram) {
+    //ebus->set_queue_received_telegram_function(esphome::zebus::ebus_queue_telegram);
+    ebus->set_queue_received_telegram_function( [&](Ebus::Telegram &telegram) {
       BaseType_t xHigherPriorityTaskWoken;
       xHigherPriorityTaskWoken = pdFALSE;
       xQueueSendToBackFromISR(telegramHistoryQueue, &telegram, &xHigherPriorityTaskWoken);
@@ -243,8 +243,8 @@ protected:
       }
     } );
 
-    //ebus->setDeueueCommandFunction(esphome::zebus::ebus_dequeue_command);
-    ebus->setDeueueCommandFunction( [&](void *const command) {
+    //ebus->set_deueue_command_function(esphome::zebus::ebus_dequeue_command);
+    ebus->set_deueue_command_function( [&](void *const command) {
       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       if (xQueueReceiveFromISR(telegramCommandQueue, command, &xHigherPriorityTaskWoken)) {
         uint8_t queue_size = (uint8_t)uxQueueMessagesWaiting(telegramCommandQueue);
@@ -256,7 +256,7 @@ protected:
       return false;
     } );
 
-    ebus->addSendResponseHandler( [&](Ebus::Telegram &telegram, uint8_t *buffer) {
+    ebus->add_send_response_handler( [&](Ebus::Telegram &telegram, uint8_t *buffer) {
       if (BYTES_TO_WORD(telegram.getPB(), telegram.getSB()) != CMD_IDENTIFICATION) {
         return 0;
       }

@@ -19,27 +19,27 @@ namespace Ebus {
 
 class Elf {
 public:
-  static unsigned char crc8Calc(unsigned char data, unsigned char crc_init);
-  static unsigned char crc8Array(unsigned char data[], unsigned int length);
-  static bool isMaster(uint8_t address);
-  static int isMasterNibble(uint8_t nibble);
-  static uint8_t getPriorityClass(uint8_t address);
-  static uint8_t getSubAddress(uint8_t address);
-  static uint8_t toSlave(uint8_t address);
+  static unsigned char crc8_calc(unsigned char data, unsigned char crc_init);
+  static unsigned char crc8_array(unsigned char data[], unsigned int length);
+  static bool is_master(uint8_t address);
+  static int is_master_nibble(uint8_t nibble);
+  static uint8_t get_priority_class(uint8_t address);
+  static uint8_t get_sub_address(uint8_t address);
+  static uint8_t to_slave(uint8_t address);
 };
 
 
 class Ebus {
 public:
   explicit Ebus(ebus_config_t &config);
-  void setUartSendFunction(std::function<void(const char *, int16_t)> uart_send);
-  //void setQueueReceivedTelegramFunction(void (*queue_received_telegram)(Telegram &telegram));
-  void setQueueReceivedTelegramFunction(std::function<void(Telegram &telegram)> queue_received_telegram);
-  //void setDeueueCommandFunction(bool (*dequeue_command)(void *const command));
-  void setDeueueCommandFunction(std::function<bool(void *const)> dequeue_command);
-  void processReceivedChar(unsigned char receivedByte);
-  //void addSendResponseHandler(send_response_handler);
-  void addSendResponseHandler(std::function<uint8_t(Telegram &, uint8_t *)>);
+  void set_uart_send_function(std::function<void(const char *, int16_t)> uart_send);
+  //void set_queue_received_telegram_function(void (*queue_received_telegram)(Telegram &telegram));
+  void set_queue_received_telegram_function(std::function<void(Telegram &telegram)> queue_received_telegram);
+  //void set_deueue_command_function(bool (*dequeue_command)(void *const command));
+  void set_deueue_command_function(std::function<bool(void *const)> dequeue_command);
+  void process_received_char(unsigned char receivedByte);
+  //void add_send_response_handler(send_response_handler);
+  void add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *)>);
 
 
 protected:
@@ -51,16 +51,16 @@ protected:
   EbusState state = EbusState::arbitration;
   Telegram receivingTelegram;
   SendCommand activeCommand;
-  //std::list<send_response_handler> sendResponseHandlers;
-  std::list<std::function<uint8_t(Telegram &, uint8_t *)>> sendResponseHandlers;
+  //std::list<send_response_handler> send_response_handlers_;
+  std::list<std::function<uint8_t(Telegram &, uint8_t *)>> send_response_handlers_;
 
   std::function<void(const char *, int16_t)> uartSend;
-  std::function<void(Telegram &)> queueReceivedTelegram;
-  std::function<bool(void *const&)> dequeueCommand;
-  uint8_t uartSendChar(uint8_t cr, bool esc, bool runCrc, uint8_t crc_init);
-  void uartSendChar(uint8_t cr, bool esc = true);
-  void uartSendRemainingRequestPart(SendCommand &command);
-  void handleResponse(Telegram &telegram);
+  std::function<void(Telegram &)> queue_received_telegram_;
+  std::function<bool(void *const&)> dequeue_command_;
+  uint8_t uart_send_char(uint8_t cr, bool esc, bool runCrc, uint8_t crc_init);
+  void uart_send_char(uint8_t cr, bool esc = true);
+  void uart_send_remaining_request_part(SendCommand &command);
+  void handle_response(Telegram &telegram);
 
 #ifdef UNIT_TEST
   Telegram getReceivingTelegram();
