@@ -1,6 +1,7 @@
 
 #include "ebus_sensor.h"
 
+// TODO: remove
 #define GET_BYTE(CMD, I) ((uint8_t) ((CMD >> 8 * I) & 0XFF))
 
 namespace esphome {
@@ -9,20 +10,21 @@ namespace ebus {
 void EbusSensor::dump_config() {
   ESP_LOGCONFIG(TAG, "EbusSensor");
   ESP_LOGCONFIG(TAG, "  message:");
-  ESP_LOGCONFIG(TAG, "    send_poll: %", this->send_poll_ ? "true" : "false");
-  ESP_LOGCONFIG(TAG, "    source: 0x%02x", this->source_);
-  ESP_LOGCONFIG(TAG, "    destination: 0x%02x", this->destination_);
+  if (this->source_ == Ebus::SYN) {
+    ESP_LOGCONFIG(TAG, "    source: N/A");
+  } else {
+    ESP_LOGCONFIG(TAG, "    source: 0x%02x", this->source_);
+  }
+  if (this->destination_ == Ebus::SYN) {
+    ESP_LOGCONFIG(TAG, "    destination: N/A");
+  } else {
+    ESP_LOGCONFIG(TAG, "    destination: 0x%02x", this->destination_);
+  }
   ESP_LOGCONFIG(TAG, "    command: 0x%04x", this->command_);
 };
 
-void EbusSensor::set_send_poll(bool send_poll) {
-  this->send_poll_ = send_poll;
-}
 void EbusSensor::set_master_address(uint8_t master_address) {
   this->master_address_ = master_address;
-}
-bool EbusSensor::is_send_poll() {
-  return this->send_poll_;
 }
 void EbusSensor::set_source(uint8_t source) {
   this->source_ = source;
@@ -36,22 +38,35 @@ void EbusSensor::set_command(uint16_t command) {
 void EbusSensor::set_payload(const std::vector<uint8_t> &payload) {
   this->payload_ = payload;
 }
+void EbusSensor::set_response_read_position(uint8_t response_position) {
+  this->response_position_ = response_position;
+}
+void EbusSensor::set_response_read_bytes(uint8_t response_bytes) {
+  this->response_bytes_ = response_bytes;
+}
+void EbusSensor::set_response_read_divider(float response_divider) {
+  this->response_divider_ = response_divider;
+}
 
-Ebus::SendCommand EbusSensor::prepare_command() {
-  return Ebus::SendCommand(  //
-       this->master_address_,
-       Ebus::Elf::to_slave(this->destination_),
-       GET_BYTE(this->command_, 1),
-       GET_BYTE(this->command_, 0),
-       this->payload_.size(),
-       &this->payload_[0]);
+optional<Ebus::SendCommand> EbusSensor::prepare_command() {
+  optional<Ebus::SendCommand> command;
+  if (this->destination_ != Ebus::SYN) {
+    command = Ebus::SendCommand(  //
+         this->master_address_,
+         Ebus::Elf::to_slave(this->destination_),
+         GET_BYTE(this->command_, 1),
+         GET_BYTE(this->command_, 0),
+         this->payload_.size(),
+         &this->payload_[0]);
+  }
+  return command;
 }
 
 void EbusSensor::process_received(Ebus::Telegram telegram) {
   if (!is_mine(telegram)) {
     return;
   }
-  this->publish_state(to_float(telegram, 0, 2, 1000.0));
+  this->publish_state(to_float(telegram, this->response_position_, this->response_bytes_, this->response_divider_));
 }
 
 uint32_t EbusSensor::get_response_bytes(Ebus::Telegram &telegram, uint8_t start, uint8_t length) {
@@ -67,8 +82,10 @@ float EbusSensor::to_float(Ebus::Telegram &telegram, uint8_t start, uint8_t leng
 }
 
 bool EbusSensor::is_mine(Ebus::Telegram &telegram) {
+  if (this->source_ != Ebus::SYN && this->source_ != telegram.getZZ()) {
+    return false;
+  }
   if (telegram.getCommand() != this->command_) {
-    ESP_LOGD(TAG, "Message receive. command: %02X, expected::0x%02X", telegram.getCommand(), this->command_);
     return false;
   }
   for (int i = 0; i < this->payload_.size(); i++) {

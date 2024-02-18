@@ -49,10 +49,13 @@ sensor:
       - name: "Water Pressure"
         id: zebus_water_pressure
         message:
-          send_poll: true
           destination: 0x03
           command: 0xb509
           payload: [0x0d, 0x02, 0x00]
+          decode:
+            position: 0
+            bytes: 2
+            divider: 1000.0
         device_class: "pressure"
         unit_of_measurement: bar
         state_class: "measurement"
@@ -67,20 +70,80 @@ sensor:
               window_size: 5
               send_every: 3
               send_first_at: 3
-      # - name: "Displayed Room Temperature"
-      #   id: zebus_disp_room_temperature
-      #   message:
-      #     send_poll: true
-      #     destination: 0x10
-      #     command: 0xb509
-      #     payload: [0x0d, 0x3e, 0x00]
-      #   device_class: "temperature"
-      #   unit_of_measurement: "°C"
-      #   state_class: "measurement"
-      #   accuracy_decimals: 1
-      #   internal: false
-      #   filters:
-      #     - median:
-      #         window_size: 5
-      #         send_every: 3
-      #         send_first_at: 3
+      - name: "Flow Temperature"
+        id: zebus_flow_temperature
+        device_class: "temperature"
+        unit_of_measurement: "°C"
+        state_class: "measurement"
+        accuracy_decimals: 1
+        internal: false
+        message:
+          command: 0xb511
+          payload: [0x01]
+          decode:
+            position: 0
+            bytes: 1
+            divider: 2.0
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
+      - name: "Return Temperature"
+        id: zebus_return_temperature
+        device_class: "temperature"
+        unit_of_measurement: "°C"
+        state_class: "measurement"
+        accuracy_decimals: 1
+        internal: false
+        message:
+          command: 0xb511
+          payload: [0x01]
+          decode:
+            position: 1
+            bytes: 1
+            divider: 2.0
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
+      - name: "Storage Temperature"
+        id: zebus_storage_temperature
+        device_class: "temperature"
+        unit_of_measurement: "°C"
+        state_class: "measurement"
+        accuracy_decimals: 1
+        internal: false
+        message:
+          command: 0xb511
+          payload: [0x01]
+          decode:
+            position: 5
+            bytes: 1
+            divider: 2.0
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3
+      - name: "Displayed Room Temperature"
+        id: zebus_disp_room_temperature
+        message:
+          destination: 0x10
+          command: 0xb509
+          payload: [0x0d, 0x3e, 0x00]
+          decode:
+            position: 0
+            bytes: 2
+            divider: 16.0
+        device_class: "temperature"
+        unit_of_measurement: "°C"
+        state_class: "measurement"
+        accuracy_decimals: 1
+        internal: false
+        filters:
+          - median:
+              window_size: 5
+              send_every: 3
+              send_first_at: 3

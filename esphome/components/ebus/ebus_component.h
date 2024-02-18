@@ -24,7 +24,7 @@ class EbusSender {
 public:
   EbusSender() {}
   virtual void set_master_address(uint8_t) = 0;
-  virtual Ebus::SendCommand prepare_command() = 0;
+  virtual optional<Ebus::SendCommand> prepare_command() = 0;
 };
 
 class EbusComponent : public PollingComponent {

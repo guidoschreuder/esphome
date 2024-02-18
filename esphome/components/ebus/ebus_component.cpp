@@ -167,12 +167,6 @@ void EbusComponent::handle_message(Ebus::Telegram &telegram) {
     return;
   }
 
-  ESP_LOGD(TAG, "Message received: QQ:0x%02X, ZZ:0x%02X, Command:0x%02X%02X",
-             telegram.getQQ(),
-             telegram.getZZ(),
-             telegram.getPB(),
-             telegram.getSB());
-
   for (auto const& receiver : this->receivers_) {
     receiver->process_received(telegram);
   }
@@ -180,8 +174,10 @@ void EbusComponent::handle_message(Ebus::Telegram &telegram) {
 
 void EbusComponent::update() {
   for (auto const& sender : this->senders_) {
-    Ebus::SendCommand command = sender->prepare_command();
-    xQueueSendToBack(this->command_queue_, &command, portMAX_DELAY);
+    optional<Ebus::SendCommand> command = sender->prepare_command();
+    if (command.has_value()) {
+      xQueueSendToBack(this->command_queue_, &command.value(), portMAX_DELAY);
+    }
   }
 
 }
