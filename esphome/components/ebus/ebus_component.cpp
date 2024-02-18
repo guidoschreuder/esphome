@@ -4,12 +4,18 @@
 namespace esphome {
 namespace ebus {
 
-  static const char *const TAG = "ebus";
-
-
 void EbusComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "EbusComponent");
-  ESP_LOGCONFIG(TAG, "  master_addres: %02X", this->master_address_);
+  ESP_LOGCONFIG(TAG, "  master_addres: 0x%02x", this->master_address_);
+  ESP_LOGCONFIG(TAG, "  max_tries: %d", this->max_tries_);
+  ESP_LOGCONFIG(TAG, "  max_lock_counter: %d", this->max_lock_counter_);
+  ESP_LOGCONFIG(TAG, "  history_queue_size: %d", this->history_queue_size_);
+  ESP_LOGCONFIG(TAG, "  command_queue_size: %d", this->command_queue_size_);
+  ESP_LOGCONFIG(TAG, "  poll_interval (ms): %d", this->update_interval_);
+  ESP_LOGCONFIG(TAG, "  uart:");
+  ESP_LOGCONFIG(TAG, "    num: %d", this->uart_num_);
+  ESP_LOGCONFIG(TAG, "    tx_pin: %d", this->uart_tx_pin_);
+  ESP_LOGCONFIG(TAG, "    rx_pin: %d", this->uart_rx_pin_);
 }
 
 void EbusComponent::setup() {
@@ -44,6 +50,14 @@ void EbusComponent::set_command_queue_size(uint8_t command_queue_size) {
   this->command_queue_size_ = command_queue_size;
 }
 
+void EbusComponent::add_sender(EbusSender *sender) {
+  sender->set_master_address(this->master_address_);
+  this->senders_.push_back(sender);
+}
+void EbusComponent::add_receiver(EbusReceiver *receiver) {
+  this->receivers_.push_back(receiver);
+}
+
 void EbusComponent::setup_queues() {
   this->history_queue_ = xQueueCreate(this->history_queue_size_, sizeof(Ebus::Telegram));
   this->command_queue_ = xQueueCreate(this->command_queue_size_, sizeof(Ebus::Telegram));
@@ -56,7 +70,9 @@ void EbusComponent::setup_ebus() {
   };
   this->ebus = new Ebus::Ebus(ebus_config);
 
-  this->ebus->set_uart_send_function( [&](const char * buffer, int16_t length) { return uart_write_bytes(this->uart_num_, buffer, length); } );
+  this->ebus->set_uart_send_function( [&](const char * buffer, int16_t length) {
+    return uart_write_bytes(this->uart_num_, buffer, length);
+  } );
 
   this->ebus->set_queue_received_telegram_function( [&](Ebus::Telegram &telegram) {
     BaseType_t xHigherPriorityTaskWoken;
@@ -67,7 +83,7 @@ void EbusComponent::setup_ebus() {
     }
   } );
 
-  this->ebus->set_deueue_command_function( [&](void *const command) {
+  this->ebus->set_dequeue_command_function( [&](void *const command) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     if (xQueueReceiveFromISR(this->command_queue_, command, &xHigherPriorityTaskWoken)) {
       if (xHigherPriorityTaskWoken) {
@@ -151,9 +167,23 @@ void EbusComponent::handle_message(Ebus::Telegram &telegram) {
     return;
   }
 
-  for (auto const& message_handler : message_handlers) {
-    message_handler(telegram);
+  ESP_LOGD(TAG, "Message received: QQ:0x%02X, ZZ:0x%02X, Command:0x%02X%02X",
+             telegram.getQQ(),
+             telegram.getZZ(),
+             telegram.getPB(),
+             telegram.getSB());
+
+  for (auto const& receiver : this->receivers_) {
+    receiver->process_received(telegram);
   }
+}
+
+void EbusComponent::update() {
+  for (auto const& sender : this->senders_) {
+    Ebus::SendCommand command = sender->prepare_command();
+    xQueueSendToBack(this->command_queue_, &command, portMAX_DELAY);
+  }
+
 }
 
 } // namespace ebus

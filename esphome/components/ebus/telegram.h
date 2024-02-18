@@ -82,6 +82,9 @@ public:
   uint8_t getSB() {
     return this->request_buffer[OFFSET_SB];
   }
+  uint16_t getCommand() {
+    return ((uint16_t) getPB()) << 8 | getSB();
+  }
   uint8_t getNN() {
     uint8_t nn = this->request_buffer[OFFSET_NN];
     if (nn >= MAX_DATA_LENGTH) {

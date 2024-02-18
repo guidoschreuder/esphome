@@ -1,17 +1,33 @@
 #pragma once
 
-#include "ebus.h"
-
-#include "esphome.h"
+#include "esphome/core/log.h"
 #include "esphome/core/component.h"
+
+#include "ebus.h"
 
 #include <driver/uart.h>
 #include <soc/uart_reg.h>
 
+
 namespace esphome {
 namespace ebus {
 
-class EbusComponent : public Component {
+  static const char *const TAG = "ebus";
+
+class EbusReceiver {
+public:
+  EbusReceiver() {}
+  virtual void process_received(Ebus::Telegram) = 0;
+};
+
+class EbusSender {
+public:
+  EbusSender() {}
+  virtual void set_master_address(uint8_t) = 0;
+  virtual Ebus::SendCommand prepare_command() = 0;
+};
+
+class EbusComponent : public PollingComponent {
 public:
   EbusComponent() {
   }
@@ -28,6 +44,11 @@ public:
   void set_history_queue_size(uint8_t);
   void set_command_queue_size(uint8_t);
 
+  void add_sender(EbusSender *);
+  void add_receiver(EbusReceiver *);
+
+  void update();
+
 protected:
   uint8_t master_address_;
   uint8_t max_tries_;
@@ -42,6 +63,8 @@ protected:
   QueueHandle_t command_queue_;
 
   std::list<std::function<void(Ebus::Telegram &telegram)>> message_handlers;
+  std::list<EbusSender *> senders_;
+  std::list<EbusReceiver *> receivers_;
 
   Ebus::Ebus* ebus;
 

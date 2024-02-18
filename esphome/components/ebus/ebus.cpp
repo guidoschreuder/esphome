@@ -16,7 +16,7 @@ void Ebus::set_queue_received_telegram_function(std::function<void(Telegram &tel
   this->queue_received_telegram_ = queue_received_telegram;
 }
 
-void Ebus::set_deueue_command_function(std::function<bool(void *const)> dequeue_command) {
+void Ebus::set_dequeue_command_function(std::function<bool(void *const)> dequeue_command) {
   this->dequeue_command_ = dequeue_command;
 }
 

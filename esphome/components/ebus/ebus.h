@@ -33,10 +33,9 @@ public:
   explicit Ebus(ebus_config_t &config);
   void set_uart_send_function(std::function<void(const char *, int16_t)> uart_send);
   void set_queue_received_telegram_function(std::function<void(Telegram &telegram)> queue_received_telegram);
-  void set_deueue_command_function(std::function<bool(void *const)> dequeue_command);
+  void set_dequeue_command_function(std::function<bool(void *const)> dequeue_command);
   void process_received_char(unsigned char receivedByte);
   void add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *)>);
-
 
 protected:
   uint8_t master_address_;

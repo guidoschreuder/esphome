@@ -1,5 +1,27 @@
 esphome:
-  name: ebus-test
+  name: zebus
+  friendly_name: Zebus Verwarming
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: ""
+
+ota:
+  password: ""
+
+wifi:
+  ssid: !secret wifi_iot_ssid
+  password: !secret wifi_iot_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Zebus Fallback Hotspot"
+    password: !secret wifi_ap_fallback_password
+
+captive_portal:
 
 esp32:
   board: esp32doit-devkit-v1
@@ -15,6 +37,7 @@ ebus:
   master_address: 0x00
   history_queue_size: 32
   command_queue_size: 16
+  poll_interval: "15s"
   uart:
     num: 1
     tx_pin: 33
@@ -25,6 +48,11 @@ sensor:
     sensors:
       - name: "Water Pressure"
         id: zebus_water_pressure
+        message:
+          send_poll: true
+          destination: 0x03
+          command: 0xb509
+          payload: [0x0d, 0x02, 0x00]
         device_class: "pressure"
         unit_of_measurement: bar
         state_class: "measurement"
@@ -39,3 +67,20 @@ sensor:
               window_size: 5
               send_every: 3
               send_first_at: 3
+      # - name: "Displayed Room Temperature"
+      #   id: zebus_disp_room_temperature
+      #   message:
+      #     send_poll: true
+      #     destination: 0x10
+      #     command: 0xb509
+      #     payload: [0x0d, 0x3e, 0x00]
+      #   device_class: "temperature"
+      #   unit_of_measurement: "°C"
+      #   state_class: "measurement"
+      #   accuracy_decimals: 1
+      #   internal: false
+      #   filters:
+      #     - median:
+      #         window_size: 5
+      #         send_every: 3
+      #         send_first_at: 3
