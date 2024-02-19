@@ -11,8 +11,8 @@ enum EbusState : int8_t {
 enum TelegramType : int8_t {
   Unknown = -1,
   Broadcast = 0,
-  MasterMaster = 1,
-  MasterSlave = 2,
+  PrimaryPrimary = 1,
+  PrimarySecondary = 2,
 };
 
 #define TELEGRAM_STATE_TABLE \
@@ -49,8 +49,8 @@ enum TelegramState : int8_t {
   const uint8_t BROADCAST_ADDRESS = 0xFE;
 
   /* Specification says:
-     1. In master and slave telegram part, standardised commands must be limited to 10 used data bytes.
-     2. In master and slave telegram part, the sum of mfr.-specific telegram used data bytes must not exceed 14.
+     1. In primary and secondary telegram part, standardised commands must be limited to 10 used data bytes.
+     2. In primary and secondary telegram part, the sum of mfr.-specific telegram used data bytes must not exceed 14.
      We use 16 to be on the safe side for now.
   */
   const uint8_t MAX_DATA_LENGTH = 16;
@@ -107,7 +107,7 @@ public:
 
 protected:
   TelegramState state;
-  uint8_t request_buffer[REQUEST_BUFFER_SIZE] = {ESC, ESC};  // initialize QQ and ZZ with ESC char to distinguish from valid master 0
+  uint8_t request_buffer[REQUEST_BUFFER_SIZE] = {ESC, ESC};  // initialize QQ and ZZ with ESC char to distinguish from valid primary 0
   uint8_t request_buffer_pos = 0;
   uint8_t request_rolling_crc = 0;
   bool wait_for_escaped_char_ = false;

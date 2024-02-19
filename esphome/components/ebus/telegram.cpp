@@ -44,10 +44,10 @@ TelegramType TelegramBase::get_type() {
   if (this->getZZ() == BROADCAST_ADDRESS) {
     return TelegramType::Broadcast;
   }
-  if (Elf::is_master(this->getZZ())) {
-    return TelegramType::MasterMaster;
+  if (Elf::is_primary(this->getZZ())) {
+    return TelegramType::PrimaryPrimary;
   }
-  return TelegramType::MasterSlave;
+  return TelegramType::PrimarySecondary;
 }
 
 int16_t TelegramBase::get_request_byte(uint8_t pos) {
@@ -70,7 +70,7 @@ bool TelegramBase::is_ack_expected() {
 }
 
 bool TelegramBase::is_response_expected() {
-  return (this->get_type() == TelegramType::MasterSlave);
+  return (this->get_type() == TelegramType::PrimarySecondary);
 }
 
 bool TelegramBase::is_finished() {

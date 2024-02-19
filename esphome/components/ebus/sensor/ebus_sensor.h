@@ -13,7 +13,7 @@ public:
 
   void dump_config() override;
 
-  void set_master_address(uint8_t) override;
+  void set_primary_address(uint8_t) override;
   void set_source(uint8_t);
   void set_destination(uint8_t);
   void set_command(uint16_t);
@@ -32,7 +32,7 @@ public:
   bool is_mine(Ebus::Telegram &telegram);
 
 protected:
-  uint8_t master_address_;
+  uint8_t primary_address_;
   uint8_t source_ = Ebus::SYN;
   uint8_t destination_ = Ebus::SYN;
   uint16_t command_;

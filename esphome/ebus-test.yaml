@@ -34,7 +34,7 @@ external_components:
       path: components
 
 ebus:
-  master_address: 0x00
+  primary_address: 0x00
   history_queue_size: 32
   command_queue_size: 16
   poll_interval: "15s"

@@ -3,7 +3,7 @@
 namespace Ebus {
 
 Ebus::Ebus(ebus_config_t &config) {
-  this->master_address_ = config.master_address;
+  this->primary_address_ = config.primary_address;
   this->max_tries_ = config.max_tries;
   this->max_lock_counter_ = config.max_lock_counter;
 }
@@ -209,9 +209,9 @@ void Ebus::process_received_char(unsigned char received_byte) {
   }
 
   // responses to our commands are stored in receiving_telegram_
-  // when response is completed send ACK or NACK when we were the master
+  // when response is completed send ACK or NACK when we were the primary
   if (this->receiving_telegram_.get_state() == TelegramState::waitForResponseAck &&
-      this->receiving_telegram_.getQQ() == this->master_address_) {
+      this->receiving_telegram_.getQQ() == this->primary_address_) {
     if (this->receiving_telegram_.is_response_valid()) {
       this->uart_send_char(ACK);
       this->uart_send_char(SYN, false);
@@ -231,7 +231,7 @@ void Ebus::add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *
 
 void Ebus::handle_response(Telegram &telegram) {
   if (telegram.get_state() != TelegramState::waitForRequestAck ||
-      telegram.getZZ() != Elf::to_slave(this->master_address_)) {
+      telegram.getZZ() != Elf::to_secondary(this->primary_address_)) {
     return;
   }
   if (!telegram.is_request_valid()) {
@@ -296,12 +296,12 @@ unsigned char Elf::crc8_array(unsigned char data[], unsigned int length) {
   return (uc_crc);
 }
 
-bool Elf::is_master(uint8_t address) {
-  return is_master_nibble(get_priority_class(address)) &&  //
-         is_master_nibble(get_sub_address(address));
+bool Elf::is_primary(uint8_t address) {
+  return is_primary_nibble(get_priority_class(address)) &&  //
+         is_primary_nibble(get_sub_address(address));
 }
 
-int Elf::is_master_nibble(uint8_t nibble) {
+int Elf::is_primary_nibble(uint8_t nibble) {
   switch (nibble) {
   case 0b0000:
   case 0b0001:
@@ -322,8 +322,8 @@ uint8_t Elf::get_sub_address(uint8_t address) {
   return (address >> 4);
 }
 
-uint8_t Elf::to_slave(uint8_t address) {
-  if (is_master(address)) {
+uint8_t Elf::to_secondary(uint8_t address) {
+  if (is_primary(address)) {
     return (address + 5) % 0xFF;
   }
   return address;

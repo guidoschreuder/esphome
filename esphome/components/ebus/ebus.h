@@ -10,7 +10,7 @@
 namespace Ebus {
 
 typedef struct {
-  uint8_t master_address;
+  uint8_t primary_address;
   uint8_t max_tries;
   uint8_t max_lock_counter;
 } ebus_config_t;
@@ -20,11 +20,11 @@ class Elf {
 public:
   static unsigned char crc8_calc(unsigned char data, unsigned char crc_init);
   static unsigned char crc8_array(unsigned char data[], unsigned int length);
-  static bool is_master(uint8_t address);
-  static int is_master_nibble(uint8_t nibble);
+  static bool is_primary(uint8_t address);
+  static int is_primary_nibble(uint8_t nibble);
   static uint8_t get_priority_class(uint8_t address);
   static uint8_t get_sub_address(uint8_t address);
-  static uint8_t to_slave(uint8_t address);
+  static uint8_t to_secondary(uint8_t address);
 };
 
 
@@ -38,7 +38,7 @@ public:
   void add_send_response_handler(std::function<uint8_t(Telegram &, uint8_t *)>);
 
 protected:
-  uint8_t master_address_;
+  uint8_t primary_address_;
   uint8_t max_tries_;
   uint8_t max_lock_counter_;
   uint8_t lock_counter_ = 0;

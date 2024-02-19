@@ -6,7 +6,7 @@ namespace ebus {
 
 void EbusComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "EbusComponent");
-  ESP_LOGCONFIG(TAG, "  master_addres: 0x%02x", this->master_address_);
+  ESP_LOGCONFIG(TAG, "  primary_addres: 0x%02x", this->primary_address_);
   ESP_LOGCONFIG(TAG, "  max_tries: %d", this->max_tries_);
   ESP_LOGCONFIG(TAG, "  max_lock_counter: %d", this->max_lock_counter_);
   ESP_LOGCONFIG(TAG, "  history_queue_size: %d", this->history_queue_size_);
@@ -25,8 +25,8 @@ void EbusComponent::setup() {
   this->setup_tasks();
 }
 
-void EbusComponent::set_master_address(uint8_t master_address) {
-  this->master_address_ = master_address;
+void EbusComponent::set_primary_address(uint8_t primary_address) {
+  this->primary_address_ = primary_address;
 }
 void EbusComponent::set_max_tries(uint8_t max_tries) {
   this->max_tries_ = max_tries;
@@ -51,7 +51,7 @@ void EbusComponent::set_command_queue_size(uint8_t command_queue_size) {
 }
 
 void EbusComponent::add_sender(EbusSender *sender) {
-  sender->set_master_address(this->master_address_);
+  sender->set_primary_address(this->primary_address_);
   this->senders_.push_back(sender);
 }
 void EbusComponent::add_receiver(EbusReceiver *receiver) {
@@ -64,7 +64,7 @@ void EbusComponent::setup_queues() {
 }
 void EbusComponent::setup_ebus() {
   Ebus::ebus_config_t ebus_config = Ebus::ebus_config_t {
-    .master_address = this->master_address_,
+    .primary_address = this->primary_address_,
     .max_tries = this->max_tries_,
     .max_lock_counter = this->max_lock_counter_,
   };

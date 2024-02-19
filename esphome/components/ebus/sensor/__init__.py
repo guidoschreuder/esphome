@@ -4,7 +4,7 @@ from esphome.components import sensor
 from esphome.const import CONF_ID, CONF_SENSORS
 import voluptuous as vol
 
-from .. import EbusComponent, CONF_EBUS_ID, CONF_MASTER_ADDRESS, ebus_ns
+from .. import EbusComponent, CONF_EBUS_ID, CONF_PRIMARY_ADDRESS, ebus_ns
 
 AUTO_LOAD = ["ebus"]
 

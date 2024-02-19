@@ -23,8 +23,8 @@ void EbusSensor::dump_config() {
   ESP_LOGCONFIG(TAG, "    command: 0x%04x", this->command_);
 };
 
-void EbusSensor::set_master_address(uint8_t master_address) {
-  this->master_address_ = master_address;
+void EbusSensor::set_primary_address(uint8_t primary_address) {
+  this->primary_address_ = primary_address;
 }
 void EbusSensor::set_source(uint8_t source) {
   this->source_ = source;
@@ -52,8 +52,8 @@ optional<Ebus::SendCommand> EbusSensor::prepare_command() {
   optional<Ebus::SendCommand> command;
   if (this->destination_ != Ebus::SYN) {
     command = Ebus::SendCommand(  //
-         this->master_address_,
-         Ebus::Elf::to_slave(this->destination_),
+         this->primary_address_,
+         Ebus::Elf::to_secondary(this->destination_),
          GET_BYTE(this->command_, 1),
          GET_BYTE(this->command_, 0),
          this->payload_.size(),

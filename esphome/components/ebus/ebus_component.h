@@ -23,7 +23,7 @@ public:
 class EbusSender {
 public:
   EbusSender() {}
-  virtual void set_master_address(uint8_t) = 0;
+  virtual void set_primary_address(uint8_t) = 0;
   virtual optional<Ebus::SendCommand> prepare_command() = 0;
 };
 
@@ -35,7 +35,7 @@ public:
   void dump_config() override;
   void setup() override;
 
-  void set_master_address(uint8_t);
+  void set_primary_address(uint8_t);
   void set_max_tries(uint8_t);
   void set_max_lock_counter(uint8_t);
   void set_uart_num(uint8_t);
@@ -50,7 +50,7 @@ public:
   void update();
 
 protected:
-  uint8_t master_address_;
+  uint8_t primary_address_;
   uint8_t max_tries_;
   uint8_t max_lock_counter_;
   uint8_t history_queue_size_;
