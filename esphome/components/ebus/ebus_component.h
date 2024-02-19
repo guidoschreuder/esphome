@@ -62,7 +62,6 @@ protected:
   QueueHandle_t history_queue_;
   QueueHandle_t command_queue_;
 
-  std::list<std::function<void(Ebus::Telegram &telegram)>> message_handlers;
   std::list<EbusSender *> senders_;
   std::list<EbusReceiver *> receivers_;
 
