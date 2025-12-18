@@ -78,7 +78,7 @@ class EbusComponent : public PollingComponent {
   uint8_t max_lock_counter_;
   uint8_t history_queue_size_;
   uint8_t command_queue_size_;
-  uint8_t uart_num_;
+  uart_port_t uart_num_;
   uint8_t uart_tx_pin_;
   uint8_t uart_rx_pin_;
 

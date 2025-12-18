@@ -35,7 +35,7 @@ void EbusComponent::setup() {
 void EbusComponent::set_primary_address(uint8_t primary_address) { this->primary_address_ = primary_address; }
 void EbusComponent::set_max_tries(uint8_t max_tries) { this->max_tries_ = max_tries; }
 void EbusComponent::set_max_lock_counter(uint8_t max_lock_counter) { this->max_lock_counter_ = max_lock_counter; }
-void EbusComponent::set_uart_num(uint8_t uart_num) { this->uart_num_ = uart_num; }
+  void EbusComponent::set_uart_num(uint8_t uart_num) { this->uart_num_ = (uart_port_t) uart_num; }
 void EbusComponent::set_uart_tx_pin(uint8_t uart_tx_pin) { this->uart_tx_pin_ = uart_tx_pin; }
 void EbusComponent::set_uart_rx_pin(uint8_t uart_rx_pin) { this->uart_rx_pin_ = uart_rx_pin; }
 void EbusComponent::set_history_queue_size(uint8_t history_queue_size) {
@@ -102,7 +102,7 @@ void EbusComponent::setup_uart_() {
       .stop_bits = UART_STOP_BITS_1,
       .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
       .rx_flow_ctrl_thresh = 2,
-      .source_clk = UART_SCLK_REF_TICK,
+      .source_clk = UART_SCLK_APB,
   };
 
   ESP_ERROR_CHECK(uart_param_config(this->uart_num_, &uart_config));

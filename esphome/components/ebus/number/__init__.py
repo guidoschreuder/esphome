@@ -43,7 +43,7 @@ async def to_code(config):
         config,
         min_value=0,  #TODO: config[CONF_MIN_VALUE],
         max_value=100,  #TODO: config[CONF_MAX_VALUE],
-        step=0.1,  #TODO: config[CONF_STEP],
+        step=1e-1 # 0.1,  #TODO: config[CONF_STEP],
     )
 
 
