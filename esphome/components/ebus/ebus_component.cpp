@@ -155,8 +155,11 @@ void EbusComponent::handle_message_(Telegram &telegram) {
     return;
   }
 
-  ESP_LOGD(TAG, "Message received successful: QQ:%02X, ZZ:%02X, Command:%02X%02X",
-           telegram.get_qq(), telegram.get_zz(), telegram.get_pb(), telegram.get_sb());
+  if (telegram.get_qq() == this->primary_address_) {
+    ESP_LOGD(TAG, "Message received successful: QQ:%02X, ZZ:%02X, Command:%02X%02X",
+             telegram.get_qq(), telegram.get_zz(), telegram.get_pb(), telegram.get_sb());
+  }
+
   for (auto const &item : this->items_) {
     item->process_received(telegram);
   }
