@@ -45,6 +45,7 @@ class Ebus {
   uint8_t max_lock_counter_;
   uint8_t lock_counter_ = 0;
   uint8_t char_count_since_last_syn_ = 0;
+  bool in_esc = false;
   EbusState state_ = EbusState::ARBITRATION;
   Telegram receiving_telegram_;
   SendCommand active_command_;

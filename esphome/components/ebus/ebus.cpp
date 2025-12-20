@@ -45,6 +45,20 @@ void Ebus::uart_send_remaining_request_part_(SendCommand &command) {
 }
 
 void Ebus::process_received_char(uint8_t received_byte) {
+  if (received_byte == ESC && !in_esc) {
+    in_esc = true;
+    return;
+  } else if (in_esc && received_byte == 0x00) {
+    received_byte = ESC;
+  } else if (in_esc && received_byte == 0x01) {
+    received_byte = SYN;
+  } else if (in_esc) {
+    // invalid sequence
+    in_esc = false;
+    this->receiving_telegram_ = Telegram();
+    return;
+  }
+
   // keep track of number of character between last 2 SYN chars
   // this is needed in case of arbitration
   if (received_byte == SYN) {
