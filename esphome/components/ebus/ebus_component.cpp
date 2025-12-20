@@ -128,7 +128,7 @@ void EbusComponent::process_received_bytes(void *pv_parameter) {
     int len = uart_read_bytes(instance->uart_num_, &received_byte, 1, 20 / portTICK_PERIOD_MS);
     if (len) {
       instance->ebus_->process_received_char(received_byte);
-      taskYIELD();
+      // taskYIELD();
     }
   }
 }
