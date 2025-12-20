@@ -50,8 +50,10 @@ void Ebus::process_received_char(uint8_t received_byte) {
     return;
   } else if (in_esc && received_byte == 0x00) {
     received_byte = ESC;
+    in_esc = false;
   } else if (in_esc && received_byte == 0x01) {
     received_byte = SYN;
+    in_esc = false;
   } else if (in_esc) {
     // invalid sequence
     in_esc = false;
