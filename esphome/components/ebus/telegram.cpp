@@ -25,13 +25,13 @@ void TelegramBase::push_buffer_(uint8_t cr, uint8_t *buffer, uint8_t *pos, uint8
   if (*pos < max_pos) {
     *crc = Elf::crc8_calc(cr, *crc);
   }
-  if (this->wait_for_escaped_char_) {
-    buffer[(*pos)] = (cr == 0x0 ? ESC : SYN);
-    this->wait_for_escaped_char_ = false;
-  } else {
+  // if (this->wait_for_escaped_char_) {
+  //   buffer[(*pos)] = (cr == 0x0 ? ESC : SYN);
+  //   this->wait_for_escaped_char_ = false;
+  // } else {
     buffer[(*pos)++] = cr;
-    this->wait_for_escaped_char_ = (cr == ESC);
-  }
+  //  this->wait_for_escaped_char_ = (cr == ESC);
+  // }
 }
 
 TelegramType TelegramBase::get_type() {

@@ -45,14 +45,15 @@ void Ebus::uart_send_remaining_request_part_(SendCommand &command) {
 }
 
 void Ebus::process_received_char(uint8_t received_byte) {
+  uint8_t real_byte = received_byte;
   if (received_byte == ESC && !in_esc) {
     in_esc = true;
     return;
   } else if (in_esc && received_byte == 0x00) {
-    received_byte = ESC;
+    real_byte = ESC;
     in_esc = false;
   } else if (in_esc && received_byte == 0x01) {
-    received_byte = SYN;
+    real_byte = SYN;
     in_esc = false;
   } else if (in_esc) {
     // invalid sequence
@@ -97,7 +98,7 @@ void Ebus::process_received_char(uint8_t received_byte) {
       break;
     case TelegramState::waitForArbitration:
       if (received_byte != SYN) {
-        this->receiving_telegram_.push_req_data(received_byte);
+        this->receiving_telegram_.push_req_data(real_byte);
         this->receiving_telegram_.set_state(TelegramState::waitForRequestData);
       }
       break;
@@ -109,7 +110,7 @@ void Ebus::process_received_char(uint8_t received_byte) {
           this->receiving_telegram_.set_state(TelegramState::endErrorUnexpectedSyn);
         }
       } else {
-        this->receiving_telegram_.push_req_data(received_byte);
+        this->receiving_telegram_.push_req_data(real_byte);
         if (this->receiving_telegram_.is_request_complete()) {
           this->receiving_telegram_.set_state(this->receiving_telegram_.is_ack_expected()
                                                   ? TelegramState::waitForRequestAck
@@ -135,7 +136,7 @@ void Ebus::process_received_char(uint8_t received_byte) {
       if (received_byte == SYN) {
         this->receiving_telegram_.set_state(TelegramState::endErrorUnexpectedSyn);
       } else {
-        this->receiving_telegram_.push_response_data(received_byte);
+        this->receiving_telegram_.push_response_data(real_byte);
         if (this->receiving_telegram_.is_response_complete()) {
           this->receiving_telegram_.set_state(TelegramState::waitForResponseAck);
         }
