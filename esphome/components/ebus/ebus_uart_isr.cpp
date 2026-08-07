@@ -1,6 +1,7 @@
 #include "ebus_uart_isr.h"
 #include "soc/interrupts.h"  // voor ETS_UARTx_INTR_SOURCE
 #include "telegram.h"        // voor de SYN-constante (dezelfde die ebus.h ook gebruikt)
+#include "esp_log.h"
 
 namespace esphome {
 namespace ebus {
@@ -25,8 +26,16 @@ void EbusUartIsr::setup(uart_port_t uart_num, uint8_t tx_pin, uint8_t rx_pin) {
       .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
       .source_clk = UART_SCLK_APB,
   };
+
+  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+  portENTER_CRITICAL(&mux);
+
   ESP_ERROR_CHECK(uart_param_config(this->uart_num_, &uart_config));
-  ESP_ERROR_CHECK(uart_set_pin(this->uart_num_, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+  esp_err_t err = uart_set_pin(this->uart_num_, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+  ESP_LOGI("ebus_uart_isr", "uart_set_pin(uart_num=%d, tx=%d, rx=%d) -> %s",
+          (int) this->uart_num_, (int) tx_pin, (int) rx_pin, esp_err_to_name(err));
+  ESP_ERROR_CHECK(err);
 
   ESP_ERROR_CHECK(esp_intr_alloc(uart_intr_source_for_(uart_num), ESP_INTR_FLAG_IRAM,
                                   &EbusUartIsr::isr_handler_, this, &this->isr_handle_));
@@ -34,6 +43,9 @@ void EbusUartIsr::setup(uart_port_t uart_num, uint8_t tx_pin, uint8_t rx_pin) {
   uart_ll_set_rxfifo_full_thr(this->hw_, 1);
   uart_ll_set_rx_tout(this->hw_, 2);
   uart_ll_ena_intr_mask(this->hw_, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+
+  portEXIT_CRITICAL(&mux);
+
 }
 
 void EbusUartIsr::arm_arbitration_byte(uint8_t byte_to_send) {
