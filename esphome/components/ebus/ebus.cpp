@@ -162,7 +162,7 @@ void Ebus::process_received_char(uint8_t received_byte) {
     case TelegramState::waitForSend:
       if (received_byte == SYN && state_ == EbusState::NORMAL && this->lock_counter_ == 0) {
         this->active_command_.set_state(TelegramState::waitForArbitration);
-        this->uart_send_char_(this->active_command_.get_qq());
+        if (this->arm_arbitration_) this->arm_arbitration_(this->active_command_.get_qq());
       }
       break;
     case TelegramState::waitForArbitration:
@@ -187,7 +187,7 @@ void Ebus::process_received_char(uint8_t received_byte) {
       break;
     case TelegramState::waitForArbitration2nd:
       if (received_byte == SYN) {
-        this->uart_send_char_(this->active_command_.get_qq());
+        if (this->arm_arbitration_) this->arm_arbitration_(this->active_command_.get_qq());
       } else if (received_byte == this->active_command_.get_qq()) {
         // won round 2
         this->uart_send_remaining_request_part_(this->active_command_);

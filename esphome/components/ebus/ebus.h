@@ -29,6 +29,9 @@ class Ebus {
   void set_uart_send_function(std::function<void(const char *, int16_t)> uart_send) {
     this->uart_send_ = std::move(uart_send);
   }
+  void set_arm_arbitration_function(std::function<void(uint8_t)> arm_arbitration) {
+    this->arm_arbitration_ = std::move(arm_arbitration);
+  }
   void set_queue_received_telegram_function(std::function<void(Telegram &telegram)> queue_received_telegram) {
     this->queue_received_telegram_ = std::move(queue_received_telegram);
   }
@@ -52,6 +55,7 @@ class Ebus {
   std::list<std::function<std::vector<uint8_t>(Telegram &)>> send_response_handlers_;
 
   std::function<void(const char *, int16_t)> uart_send_;
+  std::function<void(uint8_t)> arm_arbitration_;
   std::function<void(Telegram &)> queue_received_telegram_;
   std::function<bool(void *const &)> dequeue_command_;
   uint8_t uart_send_char_(uint8_t cr, bool esc, bool run_crc, uint8_t crc_init);

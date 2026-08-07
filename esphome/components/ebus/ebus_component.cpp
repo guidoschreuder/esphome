@@ -1,8 +1,8 @@
 #ifndef USE_ESP8266
 
 #include "ebus_component.h"
-
 #include "esphome/core/helpers.h"
+#include <inttypes.h>
 
 namespace esphome {
 namespace ebus {
@@ -18,7 +18,7 @@ void EbusComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  max_lock_counter: %d", this->max_lock_counter_);
   ESP_LOGCONFIG(TAG, "  history_queue_size: %d", this->history_queue_size_);
   ESP_LOGCONFIG(TAG, "  command_queue_size: %d", this->command_queue_size_);
-  ESP_LOGCONFIG(TAG, "  poll_interval (ms): %d", this->update_interval_);
+  ESP_LOGCONFIG(TAG, "  poll_interval (ms): %" PRIu32, this->update_interval_);
   ESP_LOGCONFIG(TAG, "  uart:");
   ESP_LOGCONFIG(TAG, "    num: %d", this->uart_num_);
   ESP_LOGCONFIG(TAG, "    tx_pin: %d", this->uart_tx_pin_);
@@ -56,8 +56,15 @@ void EbusComponent::setup_ebus_() {
   this->ebus_->set_max_tries(this->max_tries_);
   this->ebus_->set_max_lock_counter(this->max_lock_counter_);
 
-  this->ebus_->set_uart_send_function(
-      [&](const char *buffer, int16_t length) { return uart_write_bytes(this->uart_num_, buffer, length); });
+  this->ebus_->set_uart_send_function([&](const char *buffer, int16_t length) {
+    for (int16_t i = 0; i < length; i++) {
+      this->uart_isr_.write_byte((uint8_t) buffer[i]);
+    }
+  });
+
+  this->ebus_->set_arm_arbitration_function([&](uint8_t byte) {
+    this->uart_isr_.arm_arbitration_byte(byte);
+  });
 
   this->ebus_->set_queue_received_telegram_function([&](Telegram &telegram) {
     BaseType_t x_higher_priority_task_woken;
@@ -92,27 +99,7 @@ void EbusComponent::setup_ebus_() {
 }
 
 void EbusComponent::setup_uart_() {
-  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-  portENTER_CRITICAL(&mux);
-
-  uart_config_t uart_config = {
-      .baud_rate = 2400,
-      .data_bits = UART_DATA_8_BITS,
-      .parity = UART_PARITY_DISABLE,
-      .stop_bits = UART_STOP_BITS_1,
-      .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-      .rx_flow_ctrl_thresh = 2,
-      .source_clk = UART_SCLK_APB,
-  };
-
-  ESP_ERROR_CHECK(uart_param_config(this->uart_num_, &uart_config));
-
-  ESP_ERROR_CHECK(
-      uart_set_pin(this->uart_num_, this->uart_tx_pin_, this->uart_rx_pin_, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-
-  ESP_ERROR_CHECK(uart_driver_install(this->uart_num_, 256, 0, 0, nullptr, 0));
-
-  portEXIT_CRITICAL(&mux);
+  this->uart_isr_.setup(this->uart_num_, this->uart_tx_pin_, this->uart_rx_pin_);
 }
 
 void EbusComponent::setup_tasks_() {
@@ -122,13 +109,12 @@ void EbusComponent::setup_tasks_() {
 
 void EbusComponent::process_received_bytes(void *pv_parameter) {
   EbusComponent *instance = static_cast<EbusComponent *>(pv_parameter);
-
+  uint8_t byte;
   while (true) {
-    uint8_t received_byte;
-    int len = uart_read_bytes(instance->uart_num_, &received_byte, 1, 20 / portTICK_PERIOD_MS);
-    if (len) {
-      instance->ebus_->process_received_char(received_byte);
-      // taskYIELD();
+    if (instance->uart_isr_.pop_byte(&byte)) {
+      instance->ebus_->process_received_char(byte);
+    } else {
+      vTaskDelay(1);
     }
   }
 }

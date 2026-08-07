@@ -7,11 +7,8 @@
 #include "esphome/core/component.h"
 
 #include "ebus.h"
+#include "ebus_uart_isr.h"
 
-#ifndef USE_ESP8266
-#include <driver/uart.h>
-#include <soc/uart_reg.h>
-#endif
 
 namespace esphome {
 namespace ebus {
@@ -81,6 +78,7 @@ class EbusComponent : public PollingComponent {
   uart_port_t uart_num_;
   uint8_t uart_tx_pin_;
   uint8_t uart_rx_pin_;
+  EbusUartIsr uart_isr_;
 
 #ifndef USE_ESP8266
   QueueHandle_t history_queue_;
