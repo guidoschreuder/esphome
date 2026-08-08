@@ -5,7 +5,7 @@
 namespace esphome {
 namespace ebus {
 
-uint8_t Ebus::uart_send_char_(uint8_t cr, bool esc, bool run_crc, uint8_t crc_init) {
+uint8_t IRAM_ATTR Ebus::uart_send_char_(uint8_t cr, bool esc, bool run_crc, uint8_t crc_init) {
   char buffer[2];
   uint8_t crc = 0;
   uint8_t len = 1;
@@ -44,7 +44,7 @@ void Ebus::uart_send_remaining_request_part_(SendCommand &command) {
   this->uart_send_char_(command.get_crc());
 }
 
-void Ebus::process_received_char(uint8_t received_byte) {
+void IRAM_ATTR Ebus::process_received_char(uint8_t received_byte) {
   uint8_t real_byte = received_byte;
   if (received_byte == ESC && !in_esc) {
     in_esc = true;

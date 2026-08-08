@@ -5,6 +5,8 @@
 #include <list>
 #include <vector>
 
+#include "esp_attr.h"
+
 #include "telegram.h"
 
 namespace esphome {
