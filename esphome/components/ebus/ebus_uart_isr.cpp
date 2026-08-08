@@ -27,24 +27,26 @@ void EbusUartIsr::setup(uart_port_t uart_num, uint8_t tx_pin, uint8_t rx_pin) {
       .source_clk = UART_SCLK_APB,
   };
 
-  portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-  portENTER_CRITICAL(&mux);
+//   portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+//   portENTER_CRITICAL(&mux);
 
   ESP_ERROR_CHECK(uart_param_config(this->uart_num_, &uart_config));
 
   esp_err_t err = uart_set_pin(this->uart_num_, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+
   ESP_LOGI("ebus_uart_isr", "uart_set_pin(uart_num=%d, tx=%d, rx=%d) -> %s",
           (int) this->uart_num_, (int) tx_pin, (int) rx_pin, esp_err_to_name(err));
-  ESP_ERROR_CHECK(err);
 
-  ESP_ERROR_CHECK(esp_intr_alloc(uart_intr_source_for_(uart_num), ESP_INTR_FLAG_IRAM,
-                                  &EbusUartIsr::isr_handler_, this, &this->isr_handle_));
+//   ESP_ERROR_CHECK(err);
 
-  uart_ll_set_rxfifo_full_thr(this->hw_, 1);
-  uart_ll_set_rx_tout(this->hw_, 2);
-  uart_ll_ena_intr_mask(this->hw_, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+//   ESP_ERROR_CHECK(esp_intr_alloc(uart_intr_source_for_(uart_num), ESP_INTR_FLAG_IRAM,
+//                                   &EbusUartIsr::isr_handler_, this, &this->isr_handle_));
 
-  portEXIT_CRITICAL(&mux);
+//   uart_ll_set_rxfifo_full_thr(this->hw_, 1);
+//   uart_ll_set_rx_tout(this->hw_, 2);
+//   uart_ll_ena_intr_mask(this->hw_, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+
+//   portEXIT_CRITICAL(&mux);
 
 }
 
