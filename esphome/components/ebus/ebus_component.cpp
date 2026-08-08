@@ -1,5 +1,3 @@
-#ifndef USE_ESP8266
-
 #include "ebus_component.h"
 
 #include "esphome/core/helpers.h"
@@ -224,5 +222,3 @@ bool EbusItem::is_mine(Telegram &telegram) {
 
 }  // namespace ebus
 }  // namespace esphome
-
-#endif  // USE_ESP8266

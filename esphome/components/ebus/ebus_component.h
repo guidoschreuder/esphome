@@ -8,10 +8,8 @@
 
 #include "ebus.h"
 
-#ifndef USE_ESP8266
 #include <driver/uart.h>
 #include <soc/uart_reg.h>
-#endif
 
 namespace esphome {
 namespace ebus {
