@@ -31,7 +31,7 @@ uint8_t IRAM_ATTR Ebus::uart_send_char_(uint8_t cr, bool esc, bool run_crc, uint
   return Elf::crc8_calc(buffer[1], crc);
 }
 
-void Ebus::uart_send_char_(uint8_t cr, bool esc) { this->uart_send_char_(cr, esc, false, 0); }
+inline void Ebus::uart_send_char_(uint8_t cr, bool esc) { this->uart_send_char_(cr, esc, false, 0); }
 
 void Ebus::uart_send_remaining_request_part_(SendCommand &command) {
   this->uart_send_char_(command.get_zz());
@@ -165,6 +165,25 @@ void IRAM_ATTR Ebus::process_received_char(uint8_t received_byte) {
         this->uart_send_char_(this->active_command_.get_qq());
       }
       break;
+    case TelegramState::waitForArbitration2nd:
+      if (received_byte == SYN) {
+        this->uart_send_char_(this->active_command_.get_qq());
+      } else if (received_byte == this->active_command_.get_qq()) {
+        // won round 2
+        this->uart_send_remaining_request_part_(this->active_command_);
+        if (this->active_command_.is_ack_expected()) {
+          this->active_command_.set_state(TelegramState::waitForCommandAck);
+        } else {
+          this->active_command_.set_state(TelegramState::endCompleted);
+          this->lock_counter_ = this->max_lock_counter_;
+        }
+      } else {
+        // try again later if retries left
+        this->active_command_.set_state(this->active_command_.can_retry(this->max_tries_)
+                                            ? TelegramState::waitForSend
+                                            : TelegramState::endSendFailed);
+      }
+      break;
     case TelegramState::waitForArbitration:
       if (received_byte == this->active_command_.get_qq()) {
         // we won arbitration
@@ -180,25 +199,6 @@ void IRAM_ATTR Ebus::process_received_char(uint8_t received_byte) {
         this->active_command_.set_state(TelegramState::waitForArbitration2nd);
       } else {
         // lost arbitration, try again later if retries left
-        this->active_command_.set_state(this->active_command_.can_retry(this->max_tries_)
-                                            ? TelegramState::waitForSend
-                                            : TelegramState::endSendFailed);
-      }
-      break;
-    case TelegramState::waitForArbitration2nd:
-      if (received_byte == SYN) {
-        this->uart_send_char_(this->active_command_.get_qq());
-      } else if (received_byte == this->active_command_.get_qq()) {
-        // won round 2
-        this->uart_send_remaining_request_part_(this->active_command_);
-        if (this->active_command_.is_ack_expected()) {
-          this->active_command_.set_state(TelegramState::waitForCommandAck);
-        } else {
-          this->active_command_.set_state(TelegramState::endCompleted);
-          this->lock_counter_ = this->max_lock_counter_;
-        }
-      } else {
-        // try again later if retries left
         this->active_command_.set_state(this->active_command_.can_retry(this->max_tries_)
                                             ? TelegramState::waitForSend
                                             : TelegramState::endSendFailed);
