@@ -108,24 +108,26 @@ void EbusComponent::setup_uart_() {
   ESP_ERROR_CHECK(
       uart_set_pin(this->uart_num_, this->uart_tx_pin_, this->uart_rx_pin_, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
-  ESP_ERROR_CHECK(uart_driver_install(this->uart_num_, 256, 0, 0, nullptr, 0));
+  ESP_ERROR_CHECK(uart_driver_install(this->uart_num_, 256, 256, 0, nullptr, 0));
 
   portEXIT_CRITICAL(&mux);
 }
 
 void EbusComponent::setup_tasks_() {
-  xTaskCreatePinnedToCore(&process_received_bytes, "ebus_process_received_bytes", 2048, (void *) this, 20, nullptr, 1);
+  xTaskCreatePinnedToCore(&process_received_bytes, "ebus_process_received_bytes", 3072, (void *) this, 20, nullptr, 1);
   xTaskCreate(&process_received_messages, "ebus_process_received_messages", 2560, (void *) this, 5, nullptr);
 }
 
 void EbusComponent::process_received_bytes(void *pv_parameter) {
   EbusComponent *instance = static_cast<EbusComponent *>(pv_parameter);
 
+  uint8_t data[128];
+  int length = 0;
   while (true) {
-    uint8_t received_byte;
-    int len = uart_read_bytes(instance->uart_num_, &received_byte, 1, 20 / portTICK_PERIOD_MS);
-    if (len) {
-      instance->ebus_->process_received_char(received_byte);
+    ESP_ERROR_CHECK(uart_get_buffered_data_len(instance->uart_num_, (size_t*)&length));
+    length = uart_read_bytes(instance->uart_num_, data, length, 20 / portTICK_PERIOD_MS);
+    for (int i = 0; i < length; i++) {
+      instance->ebus_->process_received_char(data[i]);
       // taskYIELD();
     }
   }
