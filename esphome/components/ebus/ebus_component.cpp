@@ -1,8 +1,8 @@
 #ifndef USE_ESP8266
 
 #include "ebus_component.h"
-
 #include "esphome/core/helpers.h"
+#include <inttypes.h>
 
 namespace esphome {
 namespace ebus {
@@ -18,7 +18,7 @@ void EbusComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  max_lock_counter: %d", this->max_lock_counter_);
   ESP_LOGCONFIG(TAG, "  history_queue_size: %d", this->history_queue_size_);
   ESP_LOGCONFIG(TAG, "  command_queue_size: %d", this->command_queue_size_);
-  ESP_LOGCONFIG(TAG, "  poll_interval (ms): %d", this->update_interval_);
+  ESP_LOGCONFIG(TAG, "  poll_interval (ms): %" PRIu32, this->update_interval_);
   ESP_LOGCONFIG(TAG, "  uart:");
   ESP_LOGCONFIG(TAG, "    num: %d", this->uart_num_);
   ESP_LOGCONFIG(TAG, "    tx_pin: %d", this->uart_tx_pin_);
