@@ -116,7 +116,7 @@ void EbusComponent::setup_uart_() {
 }
 
 void EbusComponent::setup_tasks_() {
-  xTaskCreatePinnedToCore(&process_received_bytes, "ebus_process_received_bytes", 2048, (void *) this, 20, nullptr, 1);
+  xTaskCreatePinnedToCore(&process_received_bytes, "ebus_process_received_bytes", 4096, (void *) this, 20, nullptr, 1);
   xTaskCreate(&process_received_messages, "ebus_process_received_messages", 2560, (void *) this, 5, nullptr);
 }
 
