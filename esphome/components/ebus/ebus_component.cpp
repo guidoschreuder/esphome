@@ -123,13 +123,16 @@ void EbusComponent::setup_tasks_() {
 void EbusComponent::process_received_bytes(void *pv_parameter) {
   EbusComponent *instance = static_cast<EbusComponent *>(pv_parameter);
 
+  uint8_t data[128];
+  int length = 0;
   while (true) {
-    uint8_t received_byte;
-    int len = uart_read_bytes(instance->uart_num_, &received_byte, 1, 20 / portTICK_PERIOD_MS);
-    if (len) {
-      instance->ebus_->process_received_char(received_byte);
-      // taskYIELD();
+    ESP_ERROR_CHECK(uart_get_buffered_data_len(instance->uart_num_, (size_t*)&length));
+    if (length > 100) length = 100;
+    length = uart_read_bytes(instance->uart_num_, data, length, 20 / portTICK_PERIOD_MS);
+    for (int i = 0; i < length; i++) {
+      instance->ebus_->process_received_char(data[i]);
     }
+    taskYIELD();
   }
 }
 
